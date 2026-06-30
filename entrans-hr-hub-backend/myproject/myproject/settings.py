@@ -36,6 +36,11 @@ ALLOWED_HOSTS = [
     "*"
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://entrans-hr-hub-fullstack.onrender.com",
+]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Application definition
 
@@ -180,8 +185,6 @@ PASSWORD_HASHERS = [
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
-ALLOWED_HOSTS = ["*"]
-
 TIME_ZONE = "Asia/Kolkata"
 USE_TZ = True
 
@@ -199,4 +202,4 @@ SMTP_USERNAME = os.getenv("SMTP_USERNAME")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 
-FRONTEND_BASE_URL = "http://localhost:4200"
+FRONTEND_BASE_URL = "https://entrans-hr-hub-fullstasck.vercel.app"
