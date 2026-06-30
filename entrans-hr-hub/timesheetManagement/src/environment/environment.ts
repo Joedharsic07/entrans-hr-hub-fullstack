@@ -1,3 +1,3 @@
 export const environment = {
-    apiUrl:"http://localhost:8000/api"
+    apiUrl:"https://entrans-hr-hub-fullstasck.onrender.com/api"
 }

@@ -1,4 +1,4 @@
 export const environment = {
     production: true,
-    apiUrl: "http://django-backend:8000/api"  
+    apiUrl: "https://entrans-hr-hub-fullstasck.onrender.com/api"
 };
