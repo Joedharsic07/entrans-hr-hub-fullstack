@@ -1,0 +1,169 @@
+<div class="flex flex-col md:flex-row h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
+  <!-- Decorative Background for entire view -->
+  <div
+    class="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none origin-top blur-3xl transform scale-150 z-0">
+  </div>
+
+  <!-- Sidebar -->
+  <div
+    class="hidden md:block md:w-72 bg-white border-r border-slate-200 relative z-20 flex-shrink-0">
+    <app-sidebar></app-sidebar>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 overflow-x-hidden overflow-y-auto relative z-10 w-full px-4 py-8 md:px-8 lg:px-12">
+    <div class="flex items-center justify-center min-h-full">
+
+       <div
+        class="bg-white rounded-2xl shadow-lg w-full max-w-2xl p-8 sm:p-10 border border-slate-200/60 relative overflow-hidden">
+
+        <!-- Top decorative accent -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-primary"></div>
+
+        <div class="mb-8 text-center sm:text-left flex items-center gap-4">
+          <div
+            class="hidden sm:flex w-12 h-12 rounded-xl bg-primary/10 items-center justify-center flex-shrink-0 shadow-inner">
+            <i class="bi bi-folder-plus text-primary text-2xl"></i>
+          </div>
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Create New Project</h2>
+            <p class="text-slate-500 font-medium text-sm mt-1">Configure details and assign team members.</p>
+          </div>
+        </div>
+
+        <form [formGroup]="projectForm" (ngSubmit)="onSubmit()" class="space-y-6">
+
+          <!-- Error Message Banner -->
+          <div *ngIf="errorMessage"
+            class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm font-semibold flex items-start gap-3">
+            <i class="bi bi-exclamation-circle-fill text-lg"></i>
+            {{ errorMessage }}
+          </div>
+
+          <!-- Project Name Field -->
+          <div>
+            <label for="name" class="block text-sm font-bold text-slate-700 mb-2">Project Name</label>
+            <input id="name" type="text" formControlName="name" placeholder="e.g. Website Redesign Q3"
+              class="block w-full bg-slate-50 border border-slate-200 rounded-lg py-3 px-4 text-slate-800 placeholder-slate-400 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none">
+            <div *ngIf="projectForm.get('name')?.invalid && projectForm.get('name')?.touched"
+              class="text-red-500 font-semibold text-xs flex items-center gap-1 mt-2">
+              <i class="bi bi-exclamation-circle-fill"></i>
+              Project name is required and must be at least 3 characters.
+            </div>
+          </div>
+
+          <!-- Description Field -->
+          <div>
+            <label for="description" class="block text-sm font-bold text-slate-700 mb-2">Description</label>
+            <textarea id="description" formControlName="description" rows="4"
+              placeholder="Briefly describe the goals and scope of this project..."
+              class="block w-full bg-slate-50 border border-slate-200 rounded-lg py-3 px-4 text-slate-800 placeholder-slate-400 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none"></textarea>
+            <div *ngIf="projectForm.get('description')?.invalid && projectForm.get('description')?.touched"
+              class="text-red-500 font-semibold text-xs flex items-center gap-1 mt-2">
+              <i class="bi bi-exclamation-circle-fill"></i>
+              Description is required and must be at least 10 characters.
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+
+            <!-- Assign Users -->
+            <div class="relative">
+              <label class="block text-sm font-bold text-slate-700 mb-2">Assign Team Members</label>
+              <div (click)="toggleDropdown()"
+                class="cursor-pointer border border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-lg py-3 px-4 flex justify-between items-center transition-colors">
+                <span *ngIf="selectedUsers.length === 0" class="text-slate-400 text-sm font-medium">Select users...</span>
+                <span *ngIf="selectedUsers.length > 0" class="font-bold text-primary text-sm">{{ selectedUsers.length }} selected</span>
+                <i class="bi bi-chevron-down text-slate-400"></i>
+              </div>
+
+              <!-- Dropdown Panel -->
+              <div *ngIf="isDropdownOpen"
+                class="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto overflow-x-hidden">
+                <div *ngFor="let user of allUsers" (click)="toggleUserSelection(user)"
+                  class="flex items-center px-4 py-3 cursor-pointer hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors">
+                  <input type="checkbox" [checked]="isUserSelected(user.id)"
+                    class="h-4 w-4 text-primary rounded border-slate-300 mr-3 cursor-pointer pointer-events-none focus:ring-primary/30">
+                  <span class="truncate font-semibold text-slate-700 text-sm">{{ user.name }}</span>
+                </div>
+              </div>
+
+              <!-- Selected Users Chips -->
+              <div *ngIf="selectedUsers.length > 0" class="mt-3 flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-1">
+                <div *ngFor="let user of selectedUsers"
+                  class="inline-flex items-center bg-primary/10 border border-primary/20 text-primary text-xs font-bold py-1.5 px-3 rounded-md shadow-sm">
+                  {{ user.name }}
+                  <button type="button" (click)="removeUser(user.id)"
+                    class="ml-2 text-primary/50 hover:text-primary focus:outline-none transition-colors">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Project Owner -->
+            <div class="relative">
+              <label class="block text-sm font-bold text-slate-700 mb-2">Project Owner</label>
+              <div (click)="toggleOwnerDropdown()"
+                class="cursor-pointer border border-slate-200 bg-slate-50 hover:bg-slate-100 rounded-lg py-3 px-4 flex justify-between items-center transition-colors">
+                <span *ngIf="!selectedOwner" class="text-slate-400 text-sm font-medium">Select an owner...</span>
+                <span *ngIf="selectedOwner" class="font-bold text-slate-800 text-sm truncate pr-2">{{ selectedOwner.name }}</span>
+                <i class="bi bi-chevron-down text-slate-400 flex-shrink-0"></i>
+              </div>
+
+              <!-- Dropdown Panel -->
+              <div *ngIf="isOwnerDropdownOpen"
+                class="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto overflow-x-hidden">
+                <div *ngFor="let user of allUsers" (click)="selectOwner(user)"
+                  class="px-4 py-3 cursor-pointer hover:bg-slate-50 font-semibold text-slate-700 text-sm border-b border-slate-100 last:border-0 transition-colors">
+                  {{ user.name }}
+                </div>
+              </div>
+
+              <!-- Selected Owner Chip -->
+              <div *ngIf="selectedOwner" class="mt-3">
+                <div
+                  class="inline-flex items-center bg-primary/10 border border-primary/20 text-primary text-xs font-bold py-1.5 px-3 rounded-md shadow-sm">
+                  <i class="bi bi-person-fill mr-1.5"></i>
+                  {{ selectedOwner.name }}
+                  <button type="button" (click)="removeOwner()"
+                    class="ml-2 text-primary/50 hover:text-primary focus:outline-none transition-colors">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div *ngIf="projectForm.get('owner')?.invalid && projectForm.get('owner')?.touched"
+                class="text-red-500 font-semibold text-xs flex items-center gap-1 mt-2">
+                <i class="bi bi-exclamation-circle-fill"></i>
+                Please select a project owner.
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Submit Button -->
+          <div class="pt-6 mt-2 border-t border-slate-200">
+            <button type="submit" [disabled]="projectForm.invalid || isLoading"
+              class="w-full sm:w-auto sm:min-w-[200px] float-right py-3 px-6 bg-primary text-white font-bold text-sm lg:text-base rounded-xl shadow-md hover:bg-primary-hover focus:outline-none focus:ring-4 focus:ring-primary/20 disabled:opacity-50 disabled:shadow-none transition-all flex items-center justify-center gap-2 cursor-pointer">
+              <span *ngIf="!isLoading">Create Project</span>
+              <span *ngIf="isLoading" class="flex items-center gap-2">
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                  viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                  </path>
+                </svg>
+                Creating...
+              </span>
+            </button>
+            <div class="clear-both"></div>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>

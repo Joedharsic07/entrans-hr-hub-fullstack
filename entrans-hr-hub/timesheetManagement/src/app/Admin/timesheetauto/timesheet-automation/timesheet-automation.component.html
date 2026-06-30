@@ -1,0 +1,292 @@
+<div class="flex flex-col md:flex-row h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
+  <!-- Decorative Background -->
+  <div
+    class="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none origin-top blur-3xl transform scale-150 z-0">
+  </div>
+
+  <!-- Sidebar -->
+  <div
+    class="hidden md:block md:w-72 bg-white border-r border-slate-200 relative z-20 flex-shrink-0">
+    <app-sidebar></app-sidebar>
+  </div>
+
+  <div class="flex-1 overflow-x-hidden overflow-y-auto relative z-10 w-full px-4 py-8 md:px-8 lg:px-12">
+    <div class="max-w-7xl mx-auto min-h-full flex flex-col justify-start">
+
+      <!-- Upload/Validation Form (shown when no results) -->
+      <div *ngIf="!result" class="flex-1 flex items-center justify-center">
+        <div
+          class="bg-white rounded-2xl shadow-lg w-full max-w-2xl p-8 sm:p-12 border border-slate-200/60 relative overflow-hidden">
+
+          <div class="absolute top-0 left-0 right-0 h-1.5 bg-primary"></div>
+
+          <!-- Header with Icon -->
+          <div class="flex flex-col items-center mb-10 text-center">
+            <div
+              class="w-24 h-24 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner border border-primary/20 mb-6">
+              <i class="bi bi-cloud-arrow-up text-primary text-5xl"></i>
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">Timesheet Validation</h1>
+            <p class="text-slate-500 font-medium text-lg max-w-sm mx-auto">Upload your timesheet Excel file to automatically validate tracking issues and errors.</p>
+          </div>
+
+          <!-- Upload Card -->
+          <div
+            class="bg-slate-50 rounded-2xl p-6 sm:p-8 border-2 border-dashed border-slate-300 hover:border-primary/50 hover:bg-slate-100/50 transition-all duration-300 group">
+            <form (ngSubmit)="onSubmit()" enctype="multipart/form-data">
+              <div class="space-y-6">
+                <!-- File Upload Section -->
+                <div>
+                  <label for="timesheetFile"
+                    class="block text-base font-bold text-slate-700 mb-3 text-center sm:text-left">
+                    <span class="text-primary">Select Excel File</span>
+                  </label>
+
+                  <div class="flex flex-col sm:flex-row items-center gap-4">
+                    <label class="flex-1 w-full cursor-pointer relative group/input">
+                      <input type="file" id="timesheetFile" (change)="onFileSelected($event)" accept=".xlsx,.xls"
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                      <div
+                        class="flex items-center justify-between px-4 py-3.5 bg-white rounded-xl border border-slate-200 group-hover/input:border-primary/50 group-hover/input:ring-4 group-hover/input:ring-primary/10 transition-all shadow-sm">
+                        <span class="text-sm font-semibold pr-4"
+                          [ngClass]="selectedFile ? 'text-primary truncate' : 'text-slate-400'">
+                          {{ selectedFile ? selectedFile.name : 'No file selected (.xlsx, .xls)' }}
+                        </span>
+                        <span
+                          class="px-4 py-1.5 bg-slate-100 text-slate-700 font-bold text-sm rounded-lg group-hover/input:bg-primary/15 group-hover/input:text-primary transition-colors pointer-events-none whitespace-nowrap">Browse</span>
+                      </div>
+                    </label>
+                    <button type="submit" [disabled]="!selectedFile"
+                      class="w-full sm:w-auto px-8 py-3.5 bg-primary hover:bg-primary-hover disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-4 focus:ring-primary/20">
+                      <i class="bi bi-file-earmark-check"></i>
+                      Validate
+                    </button>
+                  </div>
+
+                  <div
+                    class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-slate-500 font-medium bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                    <div class="flex items-center gap-2 text-slate-600">
+                      <i class="bi bi-info-circle text-primary text-base"></i>
+                      <span>Requires valid timesheet format.</span>
+                    </div>
+                    <a href="/assets/sample_template.xlsx" download
+                      class="inline-flex items-center gap-1.5 text-primary hover:text-primary-hover font-bold transition-colors">
+                      <i class="bi bi-download"></i>
+                      Download Template
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Section (shown when results exist) -->
+      <div *ngIf="result" class="w-full">
+
+        <div class="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+          <div>
+            <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Validation Results</h2>
+            <p class="text-slate-500 font-medium text-sm mt-1">Review flagged issues and aggregated hours across all users.</p>
+          </div>
+          <button (click)="clearData()"
+            class="group inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-700 font-bold shadow-sm hover:bg-slate-50 transition-colors focus:outline-none">
+            <i class="bi bi-arrow-left"></i>
+            Upload Another File
+          </button>
+        </div>
+
+        <!-- Email Form Section -->
+        <div class="mb-10 block">
+          <div
+            class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden lg:max-w-4xl">
+            <div class="bg-red-50/50 border-b border-red-100 px-6 py-5">
+              <h3 class="text-lg font-extrabold text-red-700 m-0 flex items-center gap-2">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                Communicate Flagged Issues
+              </h3>
+            </div>
+
+            <div class="p-6 md:p-8">
+              <form [formGroup]="emailForm" (ngSubmit)="sendEmail()" class="space-y-6">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label for="emailInput" class="block text-sm font-bold text-slate-700 mb-2">Recipient Email Address</label>
+                    <input type="email" id="emailInput" formControlName="recipient_email"
+                      class="block w-full bg-slate-50 border border-slate-200 rounded-lg py-3 px-4 text-slate-800 placeholder-slate-400 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                      placeholder="manager@example.com" required>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">Email Subject</label>
+                    <div
+                      class="block w-full bg-slate-100 border border-slate-200 rounded-lg py-3 px-4 text-slate-600 font-semibold truncate">
+                      ACTION REQUIRED: Time Tracking Flags - {{ emailSubject }}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-bold text-slate-700 mb-2">Automated Email Content</label>
+                  <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 overflow-auto max-h-60 shadow-inner">
+                    <pre class="whitespace-pre-wrap font-mono text-sm leading-relaxed text-slate-300">
+<ng-container *ngFor="let line of emailBody.split('\n')"><span 
+[class.text-red-400]="line.startsWith('Error/Warning:') || line.startsWith('Flag:')" 
+[class.font-bold]="line.startsWith('Error/Warning:') || line.startsWith('Flag:')" 
+[class.text-slate-300]="line.startsWith('  ')">{{ line }}</span>
+</ng-container></pre>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-4 border-t border-slate-200">
+                  <div class="flex-1">
+                    <div *ngIf="message" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-bold"
+                      [ngClass]="messageType === 'error' ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'">
+                      <i class="bi" [ngClass]="messageType === 'error' ? 'bi-x-circle-fill mr-2' : 'bi-check-circle-fill mr-2'"></i>
+                      {{ message }}
+                    </div>
+                  </div>
+
+                  <button type="submit"
+                    class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-4 focus:ring-red-500/20 active:bg-red-800 ml-4">
+                    <i class="bi bi-send-fill"></i>
+                    Send Mail
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Grid Header & Selector -->
+        <div
+          class="flex flex-col sm:flex-row items-center justify-between bg-white rounded-t-2xl border-b border-slate-200 px-6 py-4 mt-8 shadow-sm">
+          <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <i class="bi bi-table text-primary"></i>
+            Data Tables
+          </h2>
+          <div class="flex items-center gap-3">
+            <label for="userSelect" class="text-sm font-bold text-slate-600 whitespace-nowrap">View User Data:</label>
+            <select id="userSelect" [(ngModel)]="selectedUserName"
+              class="w-auto min-w-[150px] bg-slate-50 border border-slate-200 rounded-lg shadow-sm py-2 px-3 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
+              <option *ngFor="let sheet of validatedData | keyvalue" [ngValue]="sheet.key">
+                {{ sheet.key }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div
+          class="grid grid-cols-1 xl:grid-cols-2 gap-6 bg-slate-100 p-6 rounded-b-2xl shadow-inner border border-t-0 border-slate-200 mb-10">
+
+          <!-- Validated User Data -->
+          <div *ngIf="validatedData[selectedUserName]"
+            class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[600px] overflow-hidden">
+            <div class="bg-primary px-5 py-4 text-white">
+              <h3 class="text-lg font-bold flex items-center gap-2 m-0">
+                <span class="w-2.5 h-2.5 rounded-full bg-white block"></span>
+                Details: {{ selectedUserName }}
+              </h3>
+            </div>
+            <div class="flex-1 overflow-auto">
+              <div *ngIf="validatedData[selectedUserName].length > 0; else noData" class="w-full">
+                <table class="min-w-full divide-y divide-slate-200">
+                  <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                    <tr>
+                      <th *ngFor="let key of getKeys(validatedData[selectedUserName][0])"
+                        class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">
+                        {{ key }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-slate-100">
+                    <tr *ngFor="let row of validatedData[selectedUserName]"
+                      class="hover:bg-slate-50 transition-colors">
+                      <td *ngFor="let key of getKeys(validatedData[selectedUserName][0])"
+                        class="px-5 py-3 text-sm text-slate-600 whitespace-nowrap">
+                        <span [ngClass]="{'font-bold text-slate-800': key.toLowerCase().includes('total')}">
+                          {{ row[key] }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <ng-template #noData>
+                <div class="flex flex-col items-center justify-center p-12 h-full text-center">
+                  <i class="bi bi-folder2-open text-4xl text-slate-300 mb-4"></i>
+                  <p class="text-slate-500 font-semibold text-lg">No detailed data found for {{ selectedUserName }}.</p>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+
+          <!-- Validation Summary -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-[600px] overflow-hidden">
+            <div class="bg-primary px-5 py-4 text-white">
+              <h3 class="text-lg font-bold flex items-center gap-2 m-0">
+                <span class="w-2.5 h-2.5 rounded-full bg-white block"></span>
+                Summary Report
+              </h3>
+            </div>
+            <div class="flex-1 overflow-auto">
+              <div *ngIf="validationSummary.length > 0; else noSummary" class="w-full">
+                <table class="min-w-full divide-y divide-slate-200">
+                  <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                    <tr>
+                      <th *ngFor="let key of getSummaryKeys()"
+                        class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap border-b border-slate-200">
+                        {{ key }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-slate-100">
+                    <tr *ngFor="let row of validationSummary; let i = index"
+                      class="hover:bg-slate-50 transition-colors"
+                      [ngClass]="{'bg-slate-50 font-bold border-t-2 border-slate-200': i === validationSummary.length - 1}">
+                      <td *ngFor="let key of getSummaryKeys()"
+                        class="px-5 py-3 whitespace-nowrap text-sm text-slate-600">
+                        <ng-container
+                          *ngIf="i === validationSummary.length - 1 && key === 'FILE NAME'; else defaultCell">
+                          <span class="text-slate-900 font-bold">Total Hours</span>
+                        </ng-container>
+                        <ng-template #defaultCell>
+                          <!-- Error highlighting in Review column -->
+                          <div *ngIf="key === 'Review'" class="inline-flex items-center">
+                            <span *ngIf="row[key] === 'OK'"
+                              class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+                              <i class="bi bi-check-circle-fill mr-1"></i>
+                              OK
+                            </span>
+                            <span *ngIf="row[key] !== 'OK' && row[key]"
+                              class="inline-flex items-center px-2.5 py-1 rounded text-xs font-bold bg-red-50 text-red-700 border border-red-200">
+                              <i class="bi bi-exclamation-triangle-fill mr-1"></i>
+                              {{ row[key] }}
+                            </span>
+                          </div>
+                          <span *ngIf="key !== 'Review'"
+                            [ngClass]="{'font-bold text-slate-900': i === validationSummary.length - 1}">
+                            {{ row[key] }}
+                          </span>
+                        </ng-template>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <ng-template #noSummary>
+                <div class="flex flex-col items-center justify-center p-12 h-full text-center">
+                  <i class="bi bi-folder2-open text-4xl text-slate-300 mb-4"></i>
+                  <p class="text-slate-500 font-semibold text-lg">No summary data to display.</p>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

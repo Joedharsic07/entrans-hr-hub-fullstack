@@ -1,0 +1,9 @@
+/* Tailwind handles the core layout, but we can keep component-specific transitions or overrides if necessary */
+
+.visibility-hidden {
+  visibility: hidden;
+}
+
+.visibility-visible {
+  visibility: visible;
+}

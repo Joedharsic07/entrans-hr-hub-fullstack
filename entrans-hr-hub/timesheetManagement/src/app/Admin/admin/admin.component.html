@@ -1,0 +1,209 @@
+<div class="flex flex-col md:flex-row h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
+
+  <!-- Decorative Background for entire view -->
+  <div
+    class="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none origin-top blur-3xl transform scale-150 z-0">
+  </div>
+
+  <!-- Sidebar -->
+  <div
+    class="hidden md:block md:w-72 bg-white border-r border-slate-200 relative z-20 flex-shrink-0">
+    <app-sidebar></app-sidebar>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="flex-1 overflow-x-hidden overflow-y-auto relative z-10 w-full">
+    <div class="min-h-full p-6 md:p-10 lg:p-12 max-w-7xl mx-auto">
+
+      <!-- Top Header -->
+      <div class="mb-10 lg:mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <h1 class="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">Dashboard</h1>
+          <p class="text-slate-500 text-lg mt-2 font-medium">Overview of tools and modules</p>
+        </div>
+        <!-- Optional right accent -->
+        <div class="hidden md:block w-32 h-1 bg-primary rounded-full"></div>
+      </div>
+
+      <!-- Cards grid area -->
+      <div class="w-full relative">
+
+        <!-- Admin Cards Grid -->
+        <div *ngIf="isAdmin" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+
+          <!-- Timesheet Automation -->
+          <div
+            class="group relative bg-white rounded-2xl p-6 lg:p-8 border border-slate-200 hover:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-1"
+            (click)="showTimesheetOptions = true">
+            <!-- Accent border on hover -->
+            <div
+              class="absolute inset-x-0 bottom-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity">
+            </div>
+
+            <div class="flex flex-col gap-5">
+              <div
+                class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-300 shadow-inner">
+                <i class="bi bi-calendar-range text-primary text-2xl"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2 group-hover:text-primary transition-colors">Timesheet
+                  Automation</h3>
+                <p class="text-slate-500 leading-relaxed font-medium">Automate employee timesheet submissions and
+                  streamline the approval workflow.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- PPT Automation -->
+          <div
+            class="group relative bg-white rounded-2xl p-6 lg:p-8 border border-slate-200 hover:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-1"
+            (click)="navigateToPpt()">
+            <div
+              class="absolute inset-x-0 bottom-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity">
+            </div>
+
+            <div class="flex flex-col gap-5">
+              <div
+                class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-300 shadow-inner">
+                <i class="bi bi-file-earmark-slides text-primary text-2xl"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2 group-hover:text-primary transition-colors">Anniversary
+                  Slides</h3>
+                <p class="text-slate-500 leading-relaxed font-medium">Generate professional client presentations
+                  automatically based on data.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Create Project -->
+          <div
+            class="group relative bg-white rounded-2xl p-6 lg:p-8 border border-slate-200 hover:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-1"
+            (click)="navigateToCreateProject()">
+            <div
+              class="absolute inset-x-0 bottom-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity">
+            </div>
+
+            <div class="flex flex-col gap-5">
+              <div
+                class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-300 shadow-inner">
+                <i class="bi bi-folder-plus text-primary text-2xl"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2 group-hover:text-primary transition-colors">Create
+                  Project</h3>
+                <p class="text-slate-500 leading-relaxed font-medium">Set up new projects, define parameters, and manage
+                  team assignments easily.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Project Timesheets -->
+          <div
+            class="group relative bg-white rounded-2xl p-6 lg:p-8 border border-slate-200 hover:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-1"
+            (click)="navigateToUserTimesheets()">
+            <div
+              class="absolute inset-x-0 bottom-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity">
+            </div>
+
+            <div class="flex flex-col gap-5">
+              <div
+                class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-300 shadow-inner">
+                <i class="bi bi-table text-primary text-2xl"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold text-slate-800 mb-2 group-hover:text-primary transition-colors">Project
+                  Timesheets</h3>
+                <p class="text-slate-500 leading-relaxed font-medium">Track, oversee and manage all project-related
+                  timesheets in one central place.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Non-Admin User Card -->
+        <div *ngIf="!isAdmin" class="max-w-xl">
+          <div
+            class="group relative bg-white rounded-2xl p-8 border border-slate-200 hover:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-1"
+            (click)="navigateToUserTimesheets()">
+            <div
+              class="absolute inset-x-0 bottom-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity">
+            </div>
+
+            <div class="flex items-start gap-6">
+              <div
+                class="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-300 shadow-inner">
+                <i class="bi bi-calendar-range text-primary text-3xl"></i>
+              </div>
+              <div>
+                <h3 class="text-2xl font-bold text-slate-800 mb-2 group-hover:text-primary transition-colors">My
+                  Timesheet</h3>
+                <p class="text-slate-500 leading-relaxed font-medium text-lg">Precision Time Tracking for Professional
+                  Excellence. Log your daily work quickly and efficiently.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Option Modal Overlay -->
+      <div *ngIf="showTimesheetOptions"
+        class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+
+        <div
+          class="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-200 overflow-hidden transform scale-100">
+
+          <!-- Modal Header -->
+          <div class="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+            <h2 class="text-xl font-bold text-slate-800">Timesheet Options</h2>
+            <button (click)="showTimesheetOptions = false"
+              class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-full transition-colors focus:outline-none">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="p-6 grid grid-cols-1 gap-4">
+
+            <!-- Upload Option -->
+            <div
+              class="group bg-white p-5 rounded-xl border border-slate-200 hover:border-primary/50 hover:shadow-sm hover:bg-slate-50 transition-all cursor-pointer"
+              (click)="navigateToTimesheet()">
+              <div class="flex items-center gap-4">
+                <div
+                  class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
+                  <i class="bi bi-cloud-arrow-up text-primary group-hover:text-white text-xl"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-800 group-hover:text-primary transition-colors">Upload
+                    Timesheet</h3>
+                  <p class="text-sm text-slate-500 font-medium">Upload your timesheet file for processing</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Manual Validation Option -->
+            <div
+              class="group bg-white p-5 rounded-xl border border-slate-200 hover:border-primary/50 hover:shadow-sm hover:bg-slate-50 transition-all cursor-pointer"
+              (click)="navigateToValidationTimesheet()">
+              <div class="flex items-center gap-4">
+                <div
+                  class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
+                  <i class="bi bi-clipboard-check text-primary group-hover:text-white text-xl"></i>
+                </div>
+                <div>
+                  <h3 class="text-lg font-bold text-slate-800 group-hover:text-primary transition-colors">Manual
+                    Validation</h3>
+                  <p class="text-sm text-slate-500 font-medium">Enter and validate timesheet data manually</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

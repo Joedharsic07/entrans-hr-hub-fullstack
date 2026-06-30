@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:14
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Joe@123
+    ports:
+      - "5432:5432"
+    volumes:
+      - old-pg-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./entrans-hr-hub-backend
+      dockerfile: Dockerfile
+    container_name: django-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./entrans-hr-hub-backend/.env
+    networks:
+      - app-network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./entrans-hr-hub/timesheetManagement
+      dockerfile: Dockerfile
+    container_name: angular-frontend
+    ports:
+      - "4200:80"
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
+volumes:
+  old-pg-data:
+    external: true
+    name: 6ba0dc580a8f55c66feec4069f9933f165f80e2d7e353ef0efcf9c3e9fdae712
+
+networks:
+  app-network:
+    driver: bridge

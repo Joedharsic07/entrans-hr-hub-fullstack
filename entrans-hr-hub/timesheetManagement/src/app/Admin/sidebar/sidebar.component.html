@@ -1,0 +1,123 @@
+<div class="flex h-full fixed">
+  <!-- Sidebar -->
+  <aside [class.hidden]="sidebarHidden" [class.w-20]="sidebarHidden" [class.w-72]="!sidebarHidden"
+    class="bg-primary text-slate-200 transition-all duration-300 flex flex-col shadow-xl border-r border-primary/20 h-screen z-50 overflow-y-auto overflow-x-hidden">
+
+    <!-- Logo Area Top -->
+    <div
+      class="h-20 flex items-center justify-center border-b border-white/10 sticky top-0 bg-primary z-10 shrink-0"
+      [ngClass]="{'px-6 justify-start': !sidebarHidden}">
+      <div
+        class="w-10 h-10 rounded-xl bg-white text-primary flex items-center justify-center shadow-md font-extrabold text-xl shrink-0">
+        HR
+      </div>
+      <div *ngIf="!sidebarHidden" class="ml-3 flex flex-col">
+        <span class="font-extrabold text-white text-lg tracking-tight leading-none">HR Hub</span>
+        <span class="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-0.5">Elite Edition</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="flex flex-col w-full py-6 px-4 gap-2">
+
+      <!-- Section Label -->
+      <div *ngIf="!sidebarHidden" class="px-3 mb-2 mt-2">
+        <span class="text-xs font-bold text-white/40 uppercase tracking-wider">Main Menu</span>
+      </div>
+
+      <!-- Dashboard -->
+      <div class="group">
+        <a routerLink="/admin" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
+          [routerLinkActiveOptions]="{exact: true}"
+          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap hover:bg-white/10 hover:text-white"
+          [ngClass]="{'justify-center': sidebarHidden}">
+          <i
+            class="bi bi-grid-1x2 flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
+          <span class="font-semibold ml-3" *ngIf="!sidebarHidden">Dashboard</span>
+        </a>
+      </div>
+
+      <!-- Section Label -->
+      <div *ngIf="isAdmin && !sidebarHidden" class="px-3 mb-2 mt-6">
+        <span class="text-xs font-bold text-white/40 uppercase tracking-wider">Administration</span>
+      </div>
+
+      <!-- Timesheet Automation with dropdown -->
+      <div *ngIf="isAdmin" class="group">
+        <div class="relative">
+          <button (click)="toggleTimesheetDropdown()"
+            class="flex items-center w-full rounded-xl py-3 px-3 transition-all duration-200 hover:bg-white/10 hover:text-white focus:outline-none"
+            [ngClass]="{'justify-center': sidebarHidden, 'bg-white/10 text-white': showTimesheetDropdown && !sidebarHidden}">
+            <i class="bi bi-calendar-range flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"
+              [ngClass]="{'text-white': showTimesheetDropdown}"></i>
+            <span class="font-semibold ml-3 flex-1 text-left" *ngIf="!sidebarHidden">Timesheet Tools</span>
+            <i *ngIf="!sidebarHidden" class="bi text-xs transition-transform"
+              [ngClass]="showTimesheetDropdown ? 'bi-chevron-up text-white' : 'bi-chevron-down text-white/50'"></i>
+          </button>
+
+          <!-- Dropdown items -->
+          <div *ngIf="!sidebarHidden && showTimesheetDropdown"
+            class="ml-4 mt-2 mb-2 pl-4 border-l border-white/20 space-y-1 overflow-hidden">
+            <a routerLink="/timesheet" routerLinkActive="text-white bg-white/20 font-bold"
+              class="flex items-center rounded-lg py-2 px-3 transition-all duration-200 no-underline whitespace-nowrap text-sm text-slate-300 hover:text-white hover:bg-white/10">
+              <i class="bi bi-cloud-arrow-up text-base mr-3"></i>
+              <span class="font-medium">Upload Automation</span>
+            </a>
+            <a routerLink="/validation-timesheet" routerLinkActive="text-white bg-white/20 font-bold"
+              class="flex items-center rounded-lg py-2 px-3 transition-all duration-200 no-underline whitespace-nowrap text-sm text-slate-300 hover:text-white hover:bg-white/10">
+              <i class="bi bi-clipboard-check text-base mr-3"></i>
+              <span class="font-medium">Manual Validation</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- PPT Automation -->
+      <div *ngIf="isAdmin" class="group">
+        <a routerLink="/ppt-automation" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
+          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap hover:bg-white/10 hover:text-white"
+          [ngClass]="{'justify-center': sidebarHidden}">
+          <i
+            class="bi bi-file-earmark-slides flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
+          <span class="font-semibold ml-3" *ngIf="!sidebarHidden">Anniversary Slides</span>
+        </a>
+      </div>
+
+      <!-- Create Project -->
+      <div *ngIf="isAdmin" class="group">
+        <a routerLink="/create-project" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
+          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap hover:bg-white/10 hover:text-white"
+          [ngClass]="{'justify-center': sidebarHidden}">
+          <i
+            class="bi bi-folder-plus flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
+          <span class="font-semibold ml-3" *ngIf="!sidebarHidden">Create Project</span>
+        </a>
+      </div>
+
+      <!-- Project Timesheets Overview -->
+      <div *ngIf="isAdmin" class="group">
+        <a routerLink="/user-timesheets" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
+          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap hover:bg-white/10 hover:text-white"
+          [ngClass]="{'justify-center': sidebarHidden}">
+          <i
+            class="bi bi-table flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
+          <span class="font-semibold ml-3" *ngIf="!sidebarHidden">Project Timesheets</span>
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Bottom Footer/Logout Area -->
+    <div class="mt-auto border-t border-white/10 p-4 shrink-0">
+      <div class="flex items-center justify-center text-white/40 text-xs font-medium" *ngIf="!sidebarHidden">
+        v2.0 Elite Edition
+      </div>
+    </div>
+  </aside>
+
+  <!-- Router Outlet Wrapper -->
+  <div class="flex-1 w-full ml-0 transition-all duration-300"
+    [ngClass]="{'ml-20': sidebarHidden, 'ml-72': !sidebarHidden}">
+    <router-outlet></router-outlet>
+  </div>
+</div>

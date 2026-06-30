@@ -1,0 +1,160 @@
+.container-fluid {
+    background-color: #FFFFFF;
+    font-family: Arial, sans-serif;
+  }
+  
+  .eye-icon {
+    height: 20px;
+    width: 20px;
+    object-fit: contain;
+  }
+  
+  .container-fluid h3 {
+    font-weight: 400;
+    font-size: 22px;
+  }
+  
+  .container-fluid .clipart {
+    height: 30rem;
+  }
+  
+  .container-fluid .formfield form {
+    border-radius: 0.5rem;
+    box-shadow: 0px 15px 20px 7px rgba(0, 0, 0, 0.1);
+  }
+  
+  .container-fluid .error-message {
+    font-size: 12px;
+    color: #ff4d4f;
+    position: sticky;
+  }
+  
+  .container-fluid .input-fields {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: space-evenly;
+    padding: 5px;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+  }
+  
+  .container-fluid .input-fields.error-border {
+    border: 1px solid #ff4d4f;
+  }
+  
+  .container-fluid .input-fields input[type="email"],
+  .container-fluid .input-fields input[type="text"],
+  .container-fluid .input-fields input[type="password"] {
+    background-color: transparent;
+    border: 0;
+    margin: 0;
+  }
+  
+  .container-fluid .input-fields input[type="email"]:focus,
+  .container-fluid .input-fields input[type="text"]:focus,
+  .container-fluid .input-fields input[type="password"]:focus {
+    box-shadow: none;
+  }
+  
+  .container-fluid .input-fields input::placeholder {
+    color: #999;
+  }
+  
+  .container-fluid .input-fields .eyebtn-opacity {
+    pointer-events: none;
+    opacity: 0.3;
+  }
+  
+  .container-fluid button {
+    border: 1px solid #ff4d4f;
+    background-color: #ff4d4f;
+    border-radius: 0;
+  }
+  
+  .sign-in-label {
+    color: #2855AE;
+    font-size: 20px;
+    font-weight: 400;
+    text-align: left;
+  }
+  
+  .card-title {
+    color: #2855AE;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 40px;
+    text-align: left;
+  }
+  
+ 
+.forgot-password-link {
+  color: #3538CD;
+  font-size: 12px;  
+}
+  .card {
+    box-shadow: 0px 15px 20px 7px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .form-group .form-control-label {
+    font-size: 16px;
+  }
+  
+  .form-group .form-control {
+    border-radius: 3px;
+    color: black;
+    background-color: #f5f5f5;
+  }
+  
+  .form-group .form-control.is-invalid {
+    border-color: #ff4d4f;
+  }
+  
+  .form-group .input-group {
+    border-radius: 0;
+  }
+  
+  .form-group .input-group.is-invalid .form-control {
+    border-color: #ff4d4f;
+  }
+  
+  .form-group .input-group.is-invalid .input-group-text {
+    border-color: #ff4d4f;
+    border-radius: 0;
+  }
+  
+  .form-group .input-group.is-invalid .invalid-feedback {
+    display: block;
+  }
+  
+  .form-group .input-group-text {
+    background-color: #f5f5f5;
+    border: none;
+    padding: 0;
+  }
+  
+  .form-group .invalid-feedback {
+    color: #ff4d4f;
+  }
+  
+  .eyebtn-opacity {
+    pointer-events: none;
+    opacity: 0.3;
+  }
+  .text-danger{
+    margin-top:5px
+  }
+
+  .button-loader {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

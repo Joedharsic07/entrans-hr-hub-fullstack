@@ -1,0 +1,268 @@
+{
+    "summary": [
+        {
+            "S.No": 1,
+            "File Name": "test.xlsx",
+            "Description": "Sheet1",
+            "Hours": 143.0,
+            "Review": "Contains half-days, Has non-standard hours, Incorrectly logged leave/holiday"
+        },
+        {
+            "S.No": "",
+            "File Name": "test.xlsx",
+            "Description": "",
+            "Hours": 143.0,
+            "Review": ""
+        }
+    ],
+    "validated_data": [
+        {
+            "Client": "Weekend",
+            "Date": "2025-03-01 00:00:00",
+            "Description": "Holiday",
+            "Hours": NaN,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Weekend",
+            "Date": "2025-03-02 00:00:00",
+            "Description": "Holiday",
+            "Hours": NaN,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - Subtask",
+            "Date": "2025-03-03 00:00:00",
+            "Description": "I learned about the multiprocessing methods to implement in the OCR for search words. / Leave",
+            "Hours": 4.0,
+            "Status": "Half-day detected",
+            "Flag": "\u26a0 Half-Day Alert"
+        },
+        {
+            "Client": "Client - ABC",
+            "Date": "2025-03-04 00:00:00",
+            "Description": "Analyse abouth the functionalities",
+            "Hours": 8.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - ABC",
+            "Date": "2025-03-05 00:00:00",
+            "Description": "Analyse abouth the functionalities",
+            "Hours": 8.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - Subtask",
+            "Date": "2025-03-06 00:00:00",
+            "Description": "I learned about the multiprocessing methods to implement in the OCR for search words.",
+            "Hours": 7.0,
+            "Status": "Full working day should be 8 hrs, found 7.0 hrs",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - ABC",
+            "Date": "2025-03-07 00:00:00",
+            "Description": "Analyse abouth the functionalities / Leave",
+            "Hours": 4.0,
+            "Status": "Half-day detected",
+            "Flag": "\u26a0 Half-Day Alert"
+        },
+        {
+            "Client": "Weekend",
+            "Date": "2025-03-08 00:00:00",
+            "Description": "Holiday",
+            "Hours": 8.0,
+            "Status": "Leave/Holiday should be 0 or empty",
+            "Flag": ""
+        },
+        {
+            "Client": "Weekend",
+            "Date": "2025-03-09 00:00:00",
+            "Description": "Holiday",
+            "Hours": NaN,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "leave",
+            "Date": "2025-03-10 00:00:00",
+            "Description": "leave",
+            "Hours": 0.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - ABC",
+            "Date": "2025-03-11 00:00:00",
+            "Description": "Analyse abouth the functionalities",
+            "Hours": 8.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - Subtask",
+            "Date": "2025-03-12 00:00:00",
+            "Description": "I learned about the multiprocessing methods to implement in the OCR for search words.",
+            "Hours": 6.0,
+            "Status": "Full working day should be 8 hrs, found 6.0 hrs",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - ABC",
+            "Date": "2025-03-13 00:00:00",
+            "Description": "Analyse abouth the functionalities",
+            "Hours": 8.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - Subtask",
+            "Date": "2025-03-14 00:00:00",
+            "Description": "I learned about the multiprocessing methods to implement in the OCR for search words.",
+            "Hours": 8.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Weekend",
+            "Date": "2025-03-15 00:00:00",
+            "Description": "Holiday",
+            "Hours": NaN,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Weekend",
+            "Date": "2025-03-16 00:00:00",
+            "Description": "Holiday",
+            "Hours": NaN,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Leave",
+            "Date": "2025-03-17 00:00:00",
+            "Description": "Leave",
+            "Hours": 0.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - Subtask",
+            "Date": "2025-03-18 00:00:00",
+            "Description": "I learned about the multiprocessing methods to implement in the OCR for search words.",
+            "Hours": 8.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - ABC",
+            "Date": "2025-03-19 00:00:00",
+            "Description": "Analyse abouth the functionalities",
+            "Hours": 8.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - ABC",
+            "Date": "2025-03-20 00:00:00",
+            "Description": "Analyse abouth the functionalities / Leave",
+            "Hours": 4.0,
+            "Status": "Half-day detected",
+            "Flag": "\u26a0 Half-Day Alert"
+        },
+        {
+            "Client": "Client - Subtask",
+            "Date": "2025-03-21 00:00:00",
+            "Description": "I learned about the multiprocessing methods to implement in the OCR for search words. / Leave",
+            "Hours": 4.0,
+            "Status": "Half-day detected",
+            "Flag": "\u26a0 Half-Day Alert"
+        },
+        {
+            "Client": "Weekend",
+            "Date": "2025-03-22 00:00:00",
+            "Description": "Holiday",
+            "Hours": NaN,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Weekend",
+            "Date": "2025-03-23 00:00:00",
+            "Description": "Holiday",
+            "Hours": NaN,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - Subtask",
+            "Date": "2025-03-24 00:00:00",
+            "Description": "I learned about the multiprocessing methods to implement in the OCR for search words.",
+            "Hours": 8.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - ABC",
+            "Date": "2025-03-25 00:00:00",
+            "Description": "Analyse abouth the functionalities",
+            "Hours": 8.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - ABC",
+            "Date": "2025-03-26 00:00:00",
+            "Description": "Analyse abouth the functionalities / Leave",
+            "Hours": 4.0,
+            "Status": "Half-day detected",
+            "Flag": "\u26a0 Half-Day Alert"
+        },
+        {
+            "Client": "Client - Subtask",
+            "Date": "2025-03-27 00:00:00",
+            "Description": "I learned about the multiprocessing methods to implement in the OCR for search words.",
+            "Hours": 6.0,
+            "Status": "Full working day should be 8 hrs, found 6.0 hrs",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - ABC",
+            "Date": "2025-03-28 00:00:00",
+            "Description": "Analyse abouth the functionalities",
+            "Hours": 8.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - Subtask",
+            "Date": "2025-03-29 00:00:00",
+            "Description": "I learned about the multiprocessing methods to implement in the OCR for search words.",
+            "Hours": 8.0,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Weekend",
+            "Date": "2025-03-30 00:00:00",
+            "Description": "Holiday",
+            "Hours": NaN,
+            "Status": "Valid",
+            "Flag": ""
+        },
+        {
+            "Client": "Client - ABC",
+            "Date": "2025-03-31 00:00:00",
+            "Description": "Analyse abouth the functionalities",
+            "Hours": 8.0,
+            "Status": "Valid",
+            "Flag": ""
+        }
+    ]
+}
