@@ -1,7 +1,7 @@
-<div class="flex h-full fixed">
+<div class="flex h-full fixed pointer-events-none">
   <!-- Sidebar -->
   <aside [class.hidden]="sidebarHidden" [class.w-20]="sidebarHidden" [class.w-72]="!sidebarHidden"
-    class="bg-primary text-slate-200 transition-all duration-300 flex flex-col shadow-xl border-r border-primary/20 h-screen z-50 overflow-y-auto overflow-x-hidden">
+    class="bg-primary text-slate-200 transition-all duration-300 flex flex-col shadow-xl border-r border-primary/20 h-screen z-50 overflow-y-auto overflow-x-hidden pointer-events-auto">
 
     <!-- Logo Area Top -->
     <div
@@ -29,7 +29,7 @@
       <div class="group">
         <a routerLink="/admin" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
           [routerLinkActiveOptions]="{exact: true}"
-          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap hover:bg-white/10 hover:text-white"
+          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap text-white hover:bg-white/10 hover:text-white"
           [ngClass]="{'justify-center': sidebarHidden}">
           <i
             class="bi bi-grid-1x2 flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
@@ -46,7 +46,7 @@
       <div *ngIf="isAdmin" class="group">
         <div class="relative">
           <button (click)="toggleTimesheetDropdown()"
-            class="flex items-center w-full rounded-xl py-3 px-3 transition-all duration-200 hover:bg-white/10 hover:text-white focus:outline-none"
+            class="flex items-center w-full rounded-xl py-3 px-3 transition-all duration-200 text-white hover:bg-white/10 hover:text-white focus:outline-none"
             [ngClass]="{'justify-center': sidebarHidden, 'bg-white/10 text-white': showTimesheetDropdown && !sidebarHidden}">
             <i class="bi bi-calendar-range flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"
               [ngClass]="{'text-white': showTimesheetDropdown}"></i>
@@ -59,12 +59,12 @@
           <div *ngIf="!sidebarHidden && showTimesheetDropdown"
             class="ml-4 mt-2 mb-2 pl-4 border-l border-white/20 space-y-1 overflow-hidden">
             <a routerLink="/timesheet" routerLinkActive="text-white bg-white/20 font-bold"
-              class="flex items-center rounded-lg py-2 px-3 transition-all duration-200 no-underline whitespace-nowrap text-sm text-slate-300 hover:text-white hover:bg-white/10">
+              class="flex items-center rounded-lg py-2 px-3 transition-all duration-200 no-underline whitespace-nowrap text-sm text-white hover:text-white hover:bg-white/10">
               <i class="bi bi-cloud-arrow-up text-base mr-3"></i>
               <span class="font-medium">Upload Automation</span>
             </a>
             <a routerLink="/validation-timesheet" routerLinkActive="text-white bg-white/20 font-bold"
-              class="flex items-center rounded-lg py-2 px-3 transition-all duration-200 no-underline whitespace-nowrap text-sm text-slate-300 hover:text-white hover:bg-white/10">
+              class="flex items-center rounded-lg py-2 px-3 transition-all duration-200 no-underline whitespace-nowrap text-sm text-white hover:text-white hover:bg-white/10">
               <i class="bi bi-clipboard-check text-base mr-3"></i>
               <span class="font-medium">Manual Validation</span>
             </a>
@@ -75,7 +75,7 @@
       <!-- PPT Automation -->
       <div *ngIf="isAdmin" class="group">
         <a routerLink="/ppt-automation" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
-          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap hover:bg-white/10 hover:text-white"
+          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap text-white hover:bg-white/10 hover:text-white"
           [ngClass]="{'justify-center': sidebarHidden}">
           <i
             class="bi bi-file-earmark-slides flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
@@ -86,7 +86,7 @@
       <!-- Create Project -->
       <div *ngIf="isAdmin" class="group">
         <a routerLink="/create-project" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
-          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap hover:bg-white/10 hover:text-white"
+          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap text-white hover:bg-white/10 hover:text-white"
           [ngClass]="{'justify-center': sidebarHidden}">
           <i
             class="bi bi-folder-plus flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
@@ -97,7 +97,7 @@
       <!-- Project Timesheets Overview -->
       <div *ngIf="isAdmin" class="group">
         <a routerLink="/user-timesheets" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
-          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap hover:bg-white/10 hover:text-white"
+          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap text-white hover:bg-white/10 hover:text-white"
           [ngClass]="{'justify-center': sidebarHidden}">
           <i
             class="bi bi-table flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
@@ -116,7 +116,7 @@
   </aside>
 
   <!-- Router Outlet Wrapper -->
-  <div class="flex-1 w-full ml-0 transition-all duration-300"
+  <div class="flex-1 w-full ml-0 transition-all duration-300 pointer-events-none"
     [ngClass]="{'ml-20': sidebarHidden, 'ml-72': !sidebarHidden}">
     <router-outlet></router-outlet>
   </div>

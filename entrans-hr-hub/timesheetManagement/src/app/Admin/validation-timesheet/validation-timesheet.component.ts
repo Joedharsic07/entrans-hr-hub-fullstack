@@ -175,6 +175,7 @@ toggleSelectAll() {
         });
 
         this.loading = false;
+        this.fetchData();
       },
       err => {
         this.data.forEach(e => {
@@ -187,7 +188,6 @@ toggleSelectAll() {
         this.loading = false;
       }
     );
-    this.fetchData()
 }
 
 pushEmail(entry: Entry) {
