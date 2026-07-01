@@ -48,6 +48,12 @@ years: number[] = [];
   timeSheetData: any
   isSidebarVisible: boolean = true;
 
+  savingRowIds: Set<string> = new Set();
+  savedRowIds: Set<string> = new Set();
+
+  get isReadOnly(): boolean {
+    return this.userRole === 'Admin';
+  }
 
   constructor(private service: TimesheetService, private activatedRoute: ActivatedRoute,private toastr: ToastrService,private router:Router) { }
   ngOnInit(): void {
@@ -228,7 +234,7 @@ navigate(){
   this.router.navigate(['/admin'])
 }
 navigateToTimesheet(){
-  this.router.navigate(['/user-timesheets'])
+  this.router.navigate(['/admin'])
 }
 capitalizeFirstLetter(text: string): string {
   if (!text) return '';
@@ -238,6 +244,53 @@ getDescriptionRowCount(description: string): number {
   if (!description) return 1;
   const wordCount = description.trim().split(/\s+/).length;
   return wordCount > 20 ? 2 : 1;
+}
+
+saveRow(day: any): void {
+  const isoDate = this.convertFormattedDateToISO(day.dateFormatted);
+  const payload = {
+    user_project: this.selectedUserProjectId,
+    date: isoDate,
+    task_name: day.task_name || '',
+    description: day.description || '',
+    duration: day.duration || 0,
+    work_type: day.work_type || 'working'
+  };
+
+  this.savingRowIds.add(day.dateFormatted);
+
+  const onSuccess = (res: any) => {
+    if (!day.id && res?.id) day.id = res.id;
+    this.savingRowIds.delete(day.dateFormatted);
+    this.savedRowIds.add(day.dateFormatted);
+    setTimeout(() => this.savedRowIds.delete(day.dateFormatted), 2000);
+    this.toastr.success('Row saved successfully');
+  };
+  const onError = () => {
+    this.savingRowIds.delete(day.dateFormatted);
+    this.toastr.error('Failed to save row');
+  };
+
+  if (day.id) {
+    this.service.updateTimesheet(day.id, payload).subscribe({ next: onSuccess, error: onError });
+  } else {
+    this.service.addTimesheet(payload).subscribe({ next: onSuccess, error: onError });
+  }
+}
+
+autoSave(day: any): void {
+  if (this.isReadOnly) return;
+  if (this.isDateFuture(day.dateFormatted)) return;
+  this.saveRow(day);
+}
+
+isDateFuture(dateFormatted: string): boolean {
+  const isoDate = this.convertFormattedDateToISO(dateFormatted);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const rowDate = new Date(isoDate);
+  rowDate.setHours(0, 0, 0, 0);
+  return rowDate > today;
 }
 
 }

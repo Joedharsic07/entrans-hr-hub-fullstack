@@ -80,6 +80,13 @@
               </div>
             </div>
           </div>
+
+          <!-- View-only banner for admins -->
+          <div *ngIf="isReadOnly"
+            class="mt-4 flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm font-semibold w-fit">
+            <i class="bi bi-eye text-amber-500 text-base"></i>
+            View-only mode — you are viewing this user's timesheet as an admin.
+          </div>
         </div>
 
         <!-- Timesheet Grid -->
@@ -91,7 +98,7 @@
                 <th scope="col" class="px-5 py-4 w-48 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b">Task</th>
                 <th scope="col" class="px-5 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[300px] border-b">Description</th>
                 <th scope="col" class="px-5 py-4 w-24 text-center text-xs font-bold text-slate-500 uppercase tracking-wider border-b">Hours</th>
-                <th scope="col" class="px-5 py-4 w-32 text-center text-xs font-bold text-slate-500 uppercase tracking-wider border-b">Type</th>
+                <th scope="col" class="px-5 py-4 w-36 text-center text-xs font-bold text-slate-500 uppercase tracking-wider border-b">Type</th>
               </tr>
             </thead>
 
@@ -107,37 +114,87 @@
               <!-- Data Rows -->
               <tr *ngFor="let day of dayDetails; let i = index" [ngClass]="getRowClass(day)"
                 class="hover:bg-slate-50 transition-colors group">
+
+                <!-- Date -->
                 <td class="px-5 py-3 whitespace-nowrap align-middle border-r border-slate-100">
                   <div class="flex flex-col items-start justify-center">
                     <span class="text-sm font-bold text-slate-800">{{ day.dateFormatted | date: 'd MMM' }}</span>
                     <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">{{ day.dayName | slice:0:3 }}</span>
+                    <!-- Future date lock indicator -->
+                    <span *ngIf="!isReadOnly && isDateFuture(day.dateFormatted)"
+                      class="flex items-center gap-1 text-[10px] font-semibold text-slate-400 mt-0.5">
+                      <i class="bi bi-lock-fill text-slate-300"></i>
+                      Future
+                    </span>
+                    <!-- Auto-save status indicator -->
+                    <span *ngIf="!isReadOnly && !isDateFuture(day.dateFormatted) && savingRowIds.has(day.dateFormatted)"
+                      class="flex items-center gap-1 text-[10px] font-semibold text-primary mt-0.5">
+                      <span class="inline-block w-2.5 h-2.5 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
+                      Saving...
+                    </span>
+                    <span *ngIf="!isReadOnly && !isDateFuture(day.dateFormatted) && savedRowIds.has(day.dateFormatted)"
+                      class="flex items-center gap-1 text-[10px] font-semibold text-green-600 mt-0.5">
+                      <i class="bi bi-check-circle-fill text-green-500"></i>
+                      Saved
+                    </span>
                   </div>
                 </td>
 
+                <!-- Task Name -->
                 <td class="px-5 py-3 align-middle border-r border-slate-100">
-                  <span class="text-sm font-semibold text-slate-700 leading-tight block truncate max-w-[180px]">{{ day.task_name || '-' }}</span>
+                  <input *ngIf="!isReadOnly && !isDateFuture(day.dateFormatted)"
+                    [(ngModel)]="day.task_name" type="text"
+                    (blur)="autoSave(day)"
+                    placeholder="Enter task..."
+                    class="w-full bg-transparent border-0 border-b border-slate-200 focus:border-primary focus:outline-none text-sm text-slate-700 placeholder-slate-300 py-0.5 px-0 transition-colors" />
+                  <span *ngIf="isReadOnly || isDateFuture(day.dateFormatted)"
+                    class="text-sm font-semibold leading-tight block truncate max-w-[180px]"
+                    [ngClass]="isDateFuture(day.dateFormatted) ? 'text-slate-300' : 'text-slate-700'">
+                    {{ day.task_name || '-' }}
+                  </span>
                 </td>
 
+                <!-- Description -->
                 <td class="px-5 py-3 align-middle border-r border-slate-100">
-                  <textarea [(ngModel)]="day.description" readonly
-                    class="w-full bg-transparent border-none text-sm text-slate-600 focus:ring-0 resize-none overflow-hidden p-0 leading-relaxed placeholder-slate-300 min-h-[30px]"
-                    placeholder="No description provided" [rows]="getDescriptionRowCount(day.description)"></textarea>
+                  <textarea [(ngModel)]="day.description"
+                    [readonly]="isReadOnly || isDateFuture(day.dateFormatted)"
+                    (blur)="autoSave(day)"
+                    class="w-full border-none text-sm focus:ring-0 resize-none overflow-hidden p-0 leading-relaxed placeholder-slate-300 min-h-[30px] bg-transparent transition-colors"
+                    [ngClass]="isDateFuture(day.dateFormatted) ? 'text-slate-300' : 'text-slate-600'"
+                    placeholder="No description provided"
+                    [rows]="getDescriptionRowCount(day.description)"></textarea>
                 </td>
 
+                <!-- Hours -->
                 <td class="px-5 py-3 text-center whitespace-nowrap align-middle border-r border-slate-100">
-                  <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 text-slate-800 font-bold text-sm">
+                  <input *ngIf="!isReadOnly && !isDateFuture(day.dateFormatted)"
+                    [(ngModel)]="day.duration" type="number"
+                    min="0" max="24" step="0.5"
+                    (change)="autoSave(day)"
+                    class="w-16 text-center bg-transparent border-0 border-b border-slate-200 focus:border-primary focus:outline-none text-sm font-bold text-slate-800 py-0.5 px-0 transition-colors" />
+                  <span *ngIf="isReadOnly || isDateFuture(day.dateFormatted)"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm"
+                    [ngClass]="isDateFuture(day.dateFormatted) ? 'bg-slate-50 text-slate-300' : 'bg-slate-100 text-slate-800'">
                     {{ day.duration || '0' }}
                   </span>
                 </td>
 
+                <!-- Work Type -->
                 <td class="px-5 py-3 text-center whitespace-nowrap align-middle">
-                  <span class="inline-flex px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border"
-                    [ngClass]="{
-                      'bg-green-50 text-green-700 border-green-200': capitalizeFirstLetter(day.work_type || day.absent) === 'Present' || (!day.absent && day.work_type && capitalizeFirstLetter(day.work_type) !== 'Absent' && capitalizeFirstLetter(day.work_type) !== 'Weekend' && capitalizeFirstLetter(day.work_type) !== 'Holiday'),
-                      'bg-red-50 text-red-700 border-red-200': capitalizeFirstLetter(day.absent) === 'Absent' || capitalizeFirstLetter(day.work_type) === 'Absent' || capitalizeFirstLetter(day.work_type) === 'Full Day Leave' || capitalizeFirstLetter(day.work_type) === 'Half Day Leave',
-                      'bg-slate-50 text-slate-600 border-slate-200': capitalizeFirstLetter(day.work_type || day.absent) === 'Weekend' || capitalizeFirstLetter(day.work_type || day.absent) === 'Holiday' || !capitalizeFirstLetter(day.work_type || day.absent)
-                    }">
-                    {{ capitalizeFirstLetter(day.work_type || day.absent) || 'N/A' }}
+                  <select *ngIf="!isReadOnly && !isDateFuture(day.dateFormatted)"
+                    [(ngModel)]="day.work_type"
+                    (change)="autoSave(day)"
+                    class="bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all cursor-pointer">
+                    <option *ngFor="let opt of absentOptions" [value]="opt">{{ capitalizeFirstLetter(opt) }}</option>
+                  </select>
+                  <span *ngIf="isReadOnly || isDateFuture(day.dateFormatted)"
+                    class="inline-flex px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border"
+                    [ngClass]="isDateFuture(day.dateFormatted) ? 'bg-slate-50 text-slate-300 border-slate-100' :
+                      day.work_type === 'working' ? 'bg-green-50 text-green-700 border-green-200' :
+                      day.work_type === 'full_day_leave' || day.work_type === 'half_day_leave' ? 'bg-red-50 text-red-700 border-red-200' :
+                      day.work_type === 'holiday' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      'bg-slate-50 text-slate-600 border-slate-200'">
+                    {{ capitalizeFirstLetter(day.work_type) || 'N/A' }}
                   </span>
                 </td>
               </tr>

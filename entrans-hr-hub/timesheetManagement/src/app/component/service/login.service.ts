@@ -28,4 +28,10 @@ resetLink(data: any): Observable<any> {
 resetPassword(data: any): Observable<any> {
   return this.http.post(`${this.baseUrl}/confirm-password-reset/`, data)
 }
+createUser(data: any): Observable<any> {
+  return this.http.post(`${this.baseUrl}/create-user/`, data)
+}
+changePassword(data: any): Observable<any> {
+  return this.http.post(`${this.baseUrl}/change-password/`, data)
+}
 }

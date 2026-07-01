@@ -1,6 +1,11 @@
 from django.urls import path
 from .views import (
+    ChangePasswordView,
     ConfirmPasswordResetView,
+    CreateUserView,
+    UserAdminView,
+    UserAdminDetailView,
+    TimesheetReminderView,
     MyTokenObtainPairView,
     RegisterView,
     LoginView,
@@ -93,4 +98,9 @@ urlpatterns = [
     path(
         "project-user-roles/<int:project_id>/", ProjectUsersView.as_view(), name="project-users"
     ),
+    path("create-user/", CreateUserView.as_view(), name="create-user"),
+    path("change-password/", ChangePasswordView.as_view(), name="change-password"),
+    path("admin-users/", UserAdminView.as_view(), name="admin-users"),
+    path("admin-users/<int:user_id>/", UserAdminDetailView.as_view(), name="admin-user-detail"),
+    path("send-timesheet-reminders/", TimesheetReminderView.as_view(), name="send-timesheet-reminders"),
 ]
