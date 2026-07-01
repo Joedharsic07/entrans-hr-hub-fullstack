@@ -64,7 +64,7 @@
           </h2>
           <p class="text-slate-500 text-lg flex items-center gap-2 font-medium">
             <i class="bi bi-patch-check-fill text-primary"></i>
-            HR Hub Member
+            {{ profile.designation || 'HR Hub Member' }}
           </p>
         </div>
 
@@ -93,6 +93,13 @@
                 class="block text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1 group-hover:text-primary transition-colors">Primary
                 Role</span>
               <p class="text-lg font-bold text-slate-900 capitalize">{{ profile.role || 'Not specified' }}</p>
+            </div>
+
+            <!-- Designation -->
+            <div class="group" *ngIf="profile.designation">
+              <span
+                class="block text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1 group-hover:text-primary transition-colors">Designation</span>
+              <p class="text-lg font-bold text-slate-900">{{ profile.designation }}</p>
             </div>
 
           </div>

@@ -62,4 +62,28 @@ export class ServiceService {
     return this.httpClient.get(`${this.baseUrl}/project-user-roles/${projectId}/`, { params: httpParams });
   }
 
+  addUserToProject(data: { user: number; project: number; role: string }): Observable<any> {
+    return this.httpClient.post(`${this.baseUrl}/user-projects/`, data);
+  }
+
+  getAdminUsers(params: { search?: string; page?: number; page_size?: number } = {}): Observable<any> {
+    const httpParams: any = {};
+    if (params.search) httpParams.search = params.search;
+    if (params.page) httpParams.page = params.page;
+    if (params.page_size) httpParams.page_size = params.page_size;
+    return this.httpClient.get(`${this.baseUrl}/admin-users/`, { params: httpParams });
+  }
+
+  updateUserStatus(userId: number, isActive: boolean): Observable<any> {
+    return this.httpClient.patch(`${this.baseUrl}/admin-users/${userId}/`, { is_active: isActive });
+  }
+
+  deleteAdminUser(userId: number): Observable<any> {
+    return this.httpClient.delete(`${this.baseUrl}/admin-users/${userId}/`);
+  }
+
+  sendTimesheetReminders(dryRun: boolean = false): Observable<any> {
+    return this.httpClient.post(`${this.baseUrl}/send-timesheet-reminders/`, { dry_run: dryRun });
+  }
+
 }

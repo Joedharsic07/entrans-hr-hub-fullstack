@@ -204,25 +204,48 @@ pushEmail(entry: Entry) {
   };
 
   this.timesheetService.pushEmail(payload).subscribe({
-    next: () => {
+    next: (res: any) => {
       entry.emailLoading = false;
-      this.toastrservice.success(
-        `Email pushed to ${entry.user_name} for project "${entry.project_name}"`,
-        '',
-        {
-          toastClass: 'ngx-toastr custom-toast',
-        }
-      );
-     
+
+      const sent: string[] = res?.sent || [];
+      const failed: string[] = res?.failed || [];
+
+      // Successful sends
+      if (sent.length > 0) {
+        this.toastrservice.success(
+          `Email sent to ${entry.user_name} for project "${entry.project_name}"`,
+          'Email Sent',
+          { toastClass: 'ngx-toastr custom-toast' }
+        );
+      }
+
+      // No flagged entries (warning prefix ⚠️)
+      const noFlags = failed.filter((m: string) => m.startsWith('⚠️'));
+      if (noFlags.length > 0) {
+        this.toastrservice.info(
+          `No issues found — nothing to email for ${entry.user_name} on "${entry.project_name}"`,
+          'Nothing to Send',
+          { toastClass: 'ngx-toastr custom-toast' }
+        );
+      }
+
+      // Actual SMTP failures (error prefix ❌)
+      const smtpErrors = failed.filter((m: string) => m.startsWith('❌'));
+      if (smtpErrors.length > 0) {
+        this.toastrservice.error(
+          `Failed to send email to ${entry.user_name}`,
+          'Send Failed',
+          { toastClass: 'ngx-toastr custom-toast' }
+        );
+      }
     },
-    error: (err) => {
+    error: () => {
       entry.emailLoading = false;
-      this.toastrservice.error('Failed to send email.' ,
+      this.toastrservice.error(
+        'Failed to send email.',
         '',
-        {
-          toastClass: 'ngx-toastr custom-toast',
-        }
-      )
+        { toastClass: 'ngx-toastr custom-toast' }
+      );
     }
   });
 }

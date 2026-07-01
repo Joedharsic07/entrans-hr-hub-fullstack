@@ -2,12 +2,15 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import { ToastrService } from 'ngx-toastr';
 import { ServiceService } from '../Service/service.service';
 
 interface ProjectUser {
+  user_project_id: number;
   user_id: number;
   user_name: string;
   email: string;
+  designation?: string;
   role: string;
 }
 
@@ -57,11 +60,23 @@ export class ProjectMembersComponent implements OnInit, OnDestroy {
   userPage = 1;
   readonly userPageSize = 12;
 
+  // Add User modal
+  showAddUserModal = false;
+  allUsers: any[] = [];
+  filteredUsers: any[] = [];
+  userSelectSearch = '';
+  showUserSuggestions = false;
+  selectedUserId: number | null = null;
+  addUserRole = 'collaborator';
+  addUserLoading = false;
+  addUserError = '';
+  addUserSuccess = '';
+
   private projectSearch$ = new Subject<string>();
   private userSearch$ = new Subject<string>();
   private destroy$ = new Subject<void>();
 
-  constructor(private service: ServiceService, private router: Router) {}
+  constructor(private service: ServiceService, private router: Router, private toastr: ToastrService) {}
 
   ngOnInit(): void {
     this.loadProjects();
@@ -192,5 +207,117 @@ export class ProjectMembersComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/admin']);
+  }
+
+  // ── Timesheet reminder ──────────────────────────────────────────────────
+  reminderLoading = false;
+
+  sendReminders(): void {
+    this.reminderLoading = true;
+    this.service.sendTimesheetReminders().subscribe({
+      next: (res: any) => {
+        this.reminderLoading = false;
+        const { emails_sent, emails_skipped, emails_failed, period_start, period_end } = res;
+
+        if (emails_sent > 0) {
+          this.toastr.success(
+            `Sent: ${emails_sent} &nbsp;|&nbsp; Skipped: ${emails_skipped} &nbsp;|&nbsp; Failed: ${emails_failed}<br>
+            <small>Period: ${period_start} → ${period_end}</small>`,
+            'Reminders Sent',
+            { enableHtml: true, timeOut: 5000 }
+          );
+        } else if (emails_skipped > 0 && emails_sent === 0) {
+          this.toastr.info(
+            `All users are up to date — no missing timesheet entries found.<br>
+            <small>Period: ${period_start} → ${period_end}</small>`,
+            'Nothing to Send',
+            { enableHtml: true, timeOut: 5000 }
+          );
+        } else {
+          this.toastr.warning(
+            `No users with project assignments found, or all sends failed. Failed: ${emails_failed}`,
+            'No Reminders Sent',
+            { timeOut: 5000 }
+          );
+        }
+      },
+      error: () => {
+        this.reminderLoading = false;
+        this.toastr.error('Failed to send reminders. Check server logs.', 'Error');
+      }
+    });
+  }
+
+  viewUserTimesheet(user: ProjectUser): void {
+    if (!this.selectedProject) return;
+    this.router.navigate([
+      '/user-timesheet',
+      user.user_project_id,
+      this.selectedProject.project_id
+    ]);
+  }
+
+  openAddUserModal(): void {
+    this.showAddUserModal = true;
+    this.addUserError = '';
+    this.addUserSuccess = '';
+    this.selectedUserId = null;
+    this.userSelectSearch = '';
+    this.addUserRole = 'collaborator';
+    this.showUserSuggestions = false;
+
+    if (this.allUsers.length === 0) {
+      this.service.getUsers().subscribe({
+        next: (users: any[]) => {
+          this.allUsers = users;
+          this.filteredUsers = users;
+        }
+      });
+    } else {
+      this.filteredUsers = this.allUsers;
+    }
+  }
+
+  closeAddUserModal(): void {
+    this.showAddUserModal = false;
+  }
+
+  onUserSelectInput(): void {
+    const q = this.userSelectSearch.toLowerCase();
+    this.filteredUsers = this.allUsers.filter(
+      u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+    );
+    this.showUserSuggestions = true;
+    this.selectedUserId = null;
+  }
+
+  pickUser(user: any): void {
+    this.selectedUserId = user.id;
+    this.userSelectSearch = `${user.name} (${user.email})`;
+    this.showUserSuggestions = false;
+  }
+
+  submitAddUser(): void {
+    if (!this.selectedUserId || !this.selectedProject) return;
+    this.addUserLoading = true;
+    this.addUserError = '';
+    this.addUserSuccess = '';
+
+    this.service.addUserToProject({
+      user: this.selectedUserId,
+      project: this.selectedProject.project_id,
+      role: this.addUserRole
+    }).subscribe({
+      next: () => {
+        this.addUserLoading = false;
+        this.addUserSuccess = 'User added to project successfully.';
+        this.loadUsers();
+        setTimeout(() => this.closeAddUserModal(), 1500);
+      },
+      error: (err: any) => {
+        this.addUserLoading = false;
+        this.addUserError = err.error?.error || 'Failed to add user to project.';
+      }
+    });
   }
 }

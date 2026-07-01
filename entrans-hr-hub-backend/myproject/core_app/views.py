@@ -2,6 +2,8 @@ from collections import defaultdict
 from datetime import date, timedelta, datetime
 from email.mime.text import MIMEText
 import smtplib
+import secrets
+import string
 from django.db.models import Sum
 import pandas as pd
 from rest_framework import status
@@ -223,9 +225,17 @@ class LoginView(APIView):
                         "message": "No user with this email exists"
                     }, status=status.HTTP_404_NOT_FOUND)
 
-            access_token = generate_token(user.id, 'access')
-            refresh_token = generate_token(user.id, 'refresh')
-            
+            access_token = generate_token(user, 'access')
+            refresh_token = generate_token(user, 'refresh')
+
+            # Check if temporary password has expired
+            if user.password_expires_at and user.password_expires_at < now():
+                return Response({
+                    "status": "error",
+                    "code": "password_expired",
+                    "message": "Your temporary password has expired. Please contact your administrator."
+                }, status=status.HTTP_401_UNAUTHORIZED)
+
             return Response({
                 "status": "success",
                 "user": UserSerializer(user).data,
@@ -488,20 +498,32 @@ class UserProjectListCreateView(APIView):
         user = get_user_from_request(request)
         if not user:
             return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+
         project_id = request.data.get('project')
+        target_user_id = request.data.get('user')
+
         try:
             project = Project.objects.get(id=project_id)
-            if project.owner != user:
-                return Response(
-                    {"error": "Only the project owner can add users to this project"}, 
-                    status=status.HTTP_403_FORBIDDEN
-                )
         except Project.DoesNotExist:
             return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
-            
+
+        # Only the project owner or a staff/superuser admin can add members
+        if not (user.is_staff or user.is_superuser) and project.owner != user:
+            return Response(
+                {"error": "Only the project owner or an admin can add users to this project"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Prevent duplicate assignments
+        if UserProject.objects.filter(user_id=target_user_id, project_id=project_id).exists():
+            return Response(
+                {"error": "This user is already assigned to this project"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = UserProjectSerializer(data=request.data)
         if serializer.is_valid():
-            user_project = serializer.save()
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1618,6 +1640,16 @@ class PushTimesheetEmailView(APIView):
                     "file_name": f"Project {project_id}"
                 }
 
+                # Check upfront whether there is anything to flag
+                flagged = [e for e in (sheet_data if isinstance(sheet_data, list) else []) if e.get('Status') != 'Valid']
+                flat_missing = missing_data if isinstance(missing_data, list) else (
+                    [d for dates in missing_data.values() for d in (dates if isinstance(dates, list) else [dates])]
+                    if isinstance(missing_data, dict) else []
+                )
+                if not flagged and not flat_missing:
+                    failed_emails.append(f"⚠️ {user.email} - No flagged entries or missing dates to send")
+                    continue
+
                 success, count = email_sender.send_flagged_data(
                     recipient_email=user.email,
                     subject=f"Time Tracking Flags - Project {project_id}",
@@ -1635,7 +1667,7 @@ class PushTimesheetEmailView(APIView):
                 if success:
                     success_emails.append(f"✅ {user.email} - {count} issues")
                 else:
-                    failed_emails.append(f"❌ {user.email} - Send failed")
+                    failed_emails.append(f"❌ {user.email} - SMTP send failed (check server logs for details)")
 
         return Response({
             "sent": success_emails,
@@ -1746,9 +1778,11 @@ class ProjectUsersView(APIView):
 
         users = [
             {
+                "user_project_id": up.id,
                 "user_id": up.user.id,
                 "user_name": up.user.name,
                 "email": up.user.email,
+                "designation": up.user.designation,
                 "role": up.role,
             }
             for up in assignments
@@ -1763,4 +1797,305 @@ class ProjectUsersView(APIView):
             "page_size": page_size,
             "users": users,
         }, status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+# Helper
+# ---------------------------------------------------------------------------
+
+def _generate_temp_password(length: int = 12) -> str:
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
+
+
+# ---------------------------------------------------------------------------
+# Create User (super-admin only)
+# ---------------------------------------------------------------------------
+
+class CreateUserView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        requesting_user = get_user_from_request(request)
+        if not requesting_user or not requesting_user.is_superuser:
+            return Response(
+                {"error": "Super admin access required"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        email = request.data.get('email', '').strip().lower()
+        first_name = request.data.get('first_name', '').strip()
+        last_name = request.data.get('last_name', '').strip()
+        role = request.data.get('role', 'user')
+        designation = request.data.get('designation', '').strip()
+
+        if not email or not first_name or not last_name:
+            return Response(
+                {"error": "email, first_name, and last_name are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if role not in ('user', 'superadmin'):
+            return Response(
+                {"error": "role must be 'user' or 'superadmin'"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        UserModel = get_user_model()
+        if UserModel.objects.filter(email=email).exists():
+            return Response(
+                {"error": "A user with this email already exists"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        temp_password = _generate_temp_password()
+        expires_at = now() + timedelta(hours=24)
+
+        try:
+            new_user = UserModel.objects.create_user(
+                email=email,
+                name=f"{first_name} {last_name}",
+                password=temp_password,
+            )
+            new_user.first_name = first_name
+            new_user.last_name = last_name
+            new_user.designation = designation
+            new_user.password_expires_at = expires_at
+
+            if role == 'superadmin':
+                new_user.is_staff = True
+                new_user.is_superuser = True
+
+            new_user.save()
+
+            from core_app.utils.email_service import EmailService
+            EmailService().send_welcome_email_with_temp_password(email, first_name, temp_password)
+
+            return Response(
+                {"status": "success", "message": f"User created and credentials sent to {email}"},
+                status=status.HTTP_201_CREATED,
+            )
+
+        except Exception as e:
+            logger.error(f"Create user error: {str(e)}")
+            return Response(
+                {"error": "Failed to create user"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+# ---------------------------------------------------------------------------
+# Change Password (authenticated user)
+# ---------------------------------------------------------------------------
+
+class ChangePasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        user = get_user_from_request(request)
+        if not user:
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        old_password = request.data.get('old_password', '')
+        new_password = request.data.get('new_password', '')
+
+        if not old_password or not new_password:
+            return Response(
+                {"error": "old_password and new_password are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not user.check_password(old_password):
+            return Response(
+                {"error": "Current password is incorrect"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(new_password) < 8:
+            return Response(
+                {"error": "New password must be at least 8 characters"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user.set_password(new_password)
+            user.password_expires_at = None  # clear any temporary-password expiry
+            user.save()
+
+            from core_app.utils.email_service import EmailService
+            display_name = user.first_name or (user.name.split()[0] if user.name else user.email)
+            EmailService().send_password_changed_email(user.email, display_name)
+
+            return Response({"status": "success", "message": "Password changed successfully"})
+
+        except Exception as e:
+            logger.error(f"Change password error: {str(e)}")
+            return Response(
+                {"error": "Failed to change password"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+# ---------------------------------------------------------------------------
+# Admin User Management (list / deactivate / delete)
+# ---------------------------------------------------------------------------
+
+class UserAdminView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        requesting_user = get_user_from_request(request)
+        if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
+            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+
+        UserModel = get_user_model()
+        search = request.query_params.get('search', '').strip()
+
+        try:
+            page = max(1, int(request.query_params.get('page', 1)))
+            page_size = min(50, max(1, int(request.query_params.get('page_size', 15))))
+        except (ValueError, TypeError):
+            page, page_size = 1, 15
+
+        queryset = UserModel.objects.all().order_by('name')
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) |
+                Q(email__icontains=search) |
+                Q(designation__icontains=search)
+            )
+
+        total = queryset.count()
+        total_pages = max(1, (total + page_size - 1) // page_size)
+        offset = (page - 1) * page_size
+        users = queryset[offset: offset + page_size]
+
+        # Prefetch user-project assignments for this page in one query
+        user_ids = [u.id for u in users]
+        user_projects = (
+            UserProject.objects
+            .filter(user_id__in=user_ids)
+            .select_related('project')
+            .values('user_id', 'project__id', 'project__name', 'role')
+        )
+        projects_by_user: dict = {}
+        for up in user_projects:
+            projects_by_user.setdefault(up['user_id'], []).append({
+                'project_id': up['project__id'],
+                'project_name': up['project__name'],
+                'role': up['role'],
+            })
+
+        data = [
+            {
+                'id': u.id,
+                'user_id': str(u.user_id),
+                'name': u.name,
+                'first_name': u.first_name,
+                'last_name': u.last_name,
+                'email': u.email,
+                'designation': u.designation,
+                'role': 'Admin' if (u.is_staff or u.is_superuser) else 'User',
+                'is_active': u.is_active,
+                'projects': projects_by_user.get(u.id, []),
+            }
+            for u in users
+        ]
+
+        return Response({
+            'count': total,
+            'total_pages': total_pages,
+            'current_page': page,
+            'page_size': page_size,
+            'users': data,
+        })
+
+
+class UserAdminDetailView(APIView):
+    permission_classes = [AllowAny]
+
+    def patch(self, request, user_id):
+        requesting_user = get_user_from_request(request)
+        if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
+            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+
+        UserModel = get_user_model()
+        try:
+            target = UserModel.objects.get(id=user_id)
+        except UserModel.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if 'is_active' in request.data:
+            if target.id == requesting_user.id:
+                return Response(
+                    {"error": "You cannot deactivate your own account"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            target.is_active = bool(request.data['is_active'])
+            target.save()
+
+        return Response({
+            'id': target.id,
+            'is_active': target.is_active,
+            'message': 'User updated successfully',
+        })
+
+    def delete(self, request, user_id):
+        requesting_user = get_user_from_request(request)
+        if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
+            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+
+        UserModel = get_user_model()
+        try:
+            target = UserModel.objects.get(id=user_id)
+        except UserModel.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if target.id == requesting_user.id:
+            return Response(
+                {"error": "You cannot delete your own account"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        target.delete()
+        return Response({"message": "User deleted successfully"}, status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+# Timesheet Reminder – manual trigger endpoint
+# ---------------------------------------------------------------------------
+
+class TimesheetReminderView(APIView):
+    """
+    POST /api/send-timesheet-reminders/
+    Admin-only manual trigger for the same logic the cron job runs automatically
+    on the 18th of each month at 18:00.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        requesting_user = get_user_from_request(request)
+        if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
+            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            from core_app.management.commands.send_timesheet_reminders import send_reminders
+            dry_run = request.data.get('dry_run', False)
+            result = send_reminders(dry_run=bool(dry_run))
+            return Response({
+                "status": "success",
+                "message": (
+                    f"Reminder run complete — "
+                    f"sent: {result['emails_sent']}, "
+                    f"skipped (no missing days): {result['emails_skipped']}, "
+                    f"failed: {result['emails_failed']}"
+                ),
+                **result,
+            })
+        except Exception as e:
+            logger.error(f"Timesheet reminder trigger error: {str(e)}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

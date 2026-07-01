@@ -94,14 +94,15 @@
         </a>
       </div>
 
-      <!-- Project Timesheets Overview -->
+
+      <!-- User List (admin only) -->
       <div *ngIf="isAdmin" class="group">
-        <a routerLink="/user-timesheets" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
+        <a routerLink="/user-list" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
           class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap text-white hover:bg-white/10 hover:text-white"
           [ngClass]="{'justify-center': sidebarHidden}">
           <i
-            class="bi bi-table flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
-          <span class="font-semibold ml-3" *ngIf="!sidebarHidden">Project Timesheets</span>
+            class="bi bi-people flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
+          <span class="font-semibold ml-3" *ngIf="!sidebarHidden">User List</span>
         </a>
       </div>
 
@@ -109,7 +110,46 @@
 
     <!-- Bottom Footer/Logout Area -->
     <div class="mt-auto border-t border-white/10 p-4 shrink-0">
-      <div class="flex items-center justify-center text-white/40 text-xs font-medium" *ngIf="!sidebarHidden">
+      <!-- User Name with dropdown -->
+      <div *ngIf="!sidebarHidden" class="relative">
+        <button (click)="toggleUserDropdown()"
+          class="w-full flex items-center gap-3 rounded-xl py-2 px-3 hover:bg-white/10 transition-colors focus:outline-none">
+          <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm shrink-0">
+            {{ userName ? userName.charAt(0).toUpperCase() : '?' }}
+          </div>
+          <div class="flex-1 text-left min-w-0">
+            <p class="text-white text-sm font-semibold truncate">{{ userName }}</p>
+            <p class="text-white/50 text-xs truncate">{{ userRole }}</p>
+          </div>
+          <i class="bi text-white/50 text-xs transition-transform"
+            [ngClass]="showUserDropdown ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+        </button>
+
+        <!-- Dropdown Menu -->
+        <div *ngIf="showUserDropdown"
+          class="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden z-50 text-slate-800">
+          <a routerLink="/user-profile" (click)="showUserDropdown = false"
+            class="flex items-center gap-3 px-4 py-3 text-slate-800 hover:bg-slate-50 transition-colors no-underline cursor-pointer">
+            <i class="bi bi-person-circle text-slate-700 text-base"></i>
+            <span class="text-sm font-semibold text-slate-800">My Profile</span>
+          </a>
+          <div class="h-px bg-slate-100"></div>
+          <button (click)="openChangePassword()"
+            class="w-full flex items-center gap-3 px-4 py-3 text-slate-800 hover:bg-slate-50 transition-colors focus:outline-none">
+            <i class="bi bi-shield-lock text-slate-700 text-base"></i>
+            <span class="text-sm font-semibold text-slate-800">Change Password</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Collapsed icon-only user avatar -->
+      <div *ngIf="sidebarHidden" class="flex justify-center">
+        <button (click)="toggleUserDropdown()" class="relative w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold hover:bg-white/30 transition-colors focus:outline-none">
+          {{ userName ? userName.charAt(0).toUpperCase() : '?' }}
+        </button>
+      </div>
+
+      <div class="flex items-center justify-center text-white/30 text-xs font-medium mt-2" *ngIf="!sidebarHidden">
         v2.0 Elite Edition
       </div>
     </div>
@@ -119,5 +159,107 @@
   <div class="flex-1 w-full ml-0 transition-all duration-300 pointer-events-none"
     [ngClass]="{'ml-20': sidebarHidden, 'ml-72': !sidebarHidden}">
     <router-outlet></router-outlet>
+  </div>
+</div>
+
+<!-- ===== Change Password Modal ===== -->
+<div *ngIf="showChangePasswordModal"
+  class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4"
+  (click)="closeChangePassword()">
+
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-200 overflow-hidden"
+    (click)="$event.stopPropagation()">
+
+    <!-- Modal Header -->
+    <div class="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+          <i class="bi bi-shield-lock text-primary text-base"></i>
+        </div>
+        <h2 class="text-lg font-bold text-slate-800">Change Password</h2>
+      </div>
+      <button (click)="closeChangePassword()"
+        class="text-slate-700 hover:text-slate-900 hover:bg-slate-100 p-2 rounded-full transition-colors focus:outline-none">
+        <i class="bi bi-x-lg text-sm text-slate-800"></i>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="p-6">
+
+      <!-- Success -->
+      <div *ngIf="cpSuccess"
+        class="flex items-start gap-3 bg-green-50 border border-green-200 text-green-800 rounded-xl p-3 mb-5 text-sm">
+        <i class="bi bi-check-circle-fill text-green-500 mt-0.5"></i>
+        <span>{{ cpSuccess }}</span>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="cpError"
+        class="flex items-start gap-3 bg-red-50 border border-red-200 text-red-800 rounded-xl p-3 mb-5 text-sm">
+        <i class="bi bi-exclamation-circle-fill text-red-500 mt-0.5"></i>
+        <span>{{ cpError }}</span>
+      </div>
+
+      <form (ngSubmit)="submitChangePassword()" class="space-y-4">
+
+        <!-- Current Password -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Current Password</label>
+          <div class="relative">
+            <input [(ngModel)]="cpForm.old_password" name="old_password"
+              [type]="showOldPwd ? 'text' : 'password'" placeholder="Enter current password"
+              class="w-full px-4 py-2.5 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm" />
+            <button type="button" (click)="showOldPwd = !showOldPwd"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-700 hover:text-slate-900 focus:outline-none">
+              <i [class]="showOldPwd ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- New Password -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">New Password</label>
+          <div class="relative">
+            <input [(ngModel)]="cpForm.new_password" name="new_password"
+              [type]="showNewPwd ? 'text' : 'password'" placeholder="Minimum 8 characters"
+              class="w-full px-4 py-2.5 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm" />
+            <button type="button" (click)="showNewPwd = !showNewPwd"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-700 hover:text-slate-900 focus:outline-none">
+              <i [class]="showNewPwd ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Confirm New Password -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Confirm New Password</label>
+          <div class="relative">
+            <input [(ngModel)]="cpForm.confirm_password" name="confirm_password"
+              [type]="showConfirmPwd ? 'text' : 'password'" placeholder="Repeat new password"
+              class="w-full px-4 py-2.5 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm" />
+            <button type="button" (click)="showConfirmPwd = !showConfirmPwd"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-700 hover:text-slate-900 focus:outline-none">
+              <i [class]="showConfirmPwd ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-3 pt-2">
+          <button type="button" (click)="closeChangePassword()"
+            class="flex-1 py-2.5 rounded-xl font-semibold text-sm hover:bg-slate-100 transition-colors focus:outline-none"
+            style="border: 1.5px solid #000; color: #000; background: #fff;">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="cpLoading"
+            class="flex-1 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
+            <span *ngIf="cpLoading" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>{{ cpLoading ? 'Saving...' : 'Change Password' }}</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
   </div>
 </div>

@@ -11,11 +11,12 @@ import { AuthGuard } from './shared/Auth/auth.guard';
 import { ResetPasswordComponent } from './component/reset-password/reset-password.component';
 import { ConfrimResetPasswordComponent } from './component/confrim-reset-password/confrim-reset-password.component';
 import { UserProfileComponent } from './component/user-profile/user-profile.component';
-import { UserTimesheetsComponent } from './Admin/user-timesheets/user-timesheets.component';
 import { UserTimesheetsListComponent } from './Admin/user-timesheets-list/user-timesheets-list.component';
 import { CreateProjectComponent } from './Admin/create-project/create-project.component';
 import { ValidationTimesheetComponent } from './Admin/validation-timesheet/validation-timesheet.component';
 import { ProjectMembersComponent } from './Admin/project-members/project-members.component';
+import { CreateUserComponent } from './Admin/create-user/create-user.component';
+import { UserListComponent } from './Admin/user-list/user-list.component';
 
 const routes: Routes = [{
   path: '',
@@ -71,13 +72,8 @@ const routes: Routes = [{
   component: ConfrimResetPasswordComponent
 },
 {
-  path: 'user-timesheets',
-  component: UserTimesheetsComponent,
-},
-{
   path: 'user-timesheets-list',
   component: UserTimesheetsListComponent,
-
 },
 {
   path: 'user-timesheet/:userProjectId/:projectId',
@@ -98,6 +94,18 @@ const routes: Routes = [{
 {
   path: 'project-members',
   component: ProjectMembersComponent,
+  canActivate: [AuthGuard],
+  data: { roles: ['Admin'] }
+},
+{
+  path: 'create-user',
+  component: CreateUserComponent,
+  canActivate: [AuthGuard],
+  data: { roles: ['Admin'] }
+},
+{
+  path: 'user-list',
+  component: UserListComponent,
   canActivate: [AuthGuard],
   data: { roles: ['Admin'] }
 }

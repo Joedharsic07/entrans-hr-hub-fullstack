@@ -20,11 +20,12 @@ import { AuthGuard } from './shared/Auth/auth.guard';
 import { ResetPasswordComponent } from './component/reset-password/reset-password.component';
 import { ConfrimResetPasswordComponent } from './component/confrim-reset-password/confrim-reset-password.component';
 import { UserProfileComponent } from './component/user-profile/user-profile.component';
-import { UserTimesheetsComponent } from './Admin/user-timesheets/user-timesheets.component';
 import { UserTimesheetsListComponent } from './Admin/user-timesheets-list/user-timesheets-list.component';
 import { CreateProjectComponent } from './Admin/create-project/create-project.component';
 import { ValidationTimesheetComponent } from './Admin/validation-timesheet/validation-timesheet.component';
 import { ProjectMembersComponent } from './Admin/project-members/project-members.component';
+import { CreateUserComponent } from './Admin/create-user/create-user.component';
+import { UserListComponent } from './Admin/user-list/user-list.component';
 
 @NgModule({
   declarations: [
@@ -39,11 +40,12 @@ import { ProjectMembersComponent } from './Admin/project-members/project-members
     ResetPasswordComponent,
     ConfrimResetPasswordComponent,
     UserProfileComponent,
-    UserTimesheetsComponent,
     UserTimesheetsListComponent,
     CreateProjectComponent,
     ValidationTimesheetComponent,
-    ProjectMembersComponent
+    ProjectMembersComponent,
+    CreateUserComponent,
+    UserListComponent
   ],
   imports: [
     BrowserModule,

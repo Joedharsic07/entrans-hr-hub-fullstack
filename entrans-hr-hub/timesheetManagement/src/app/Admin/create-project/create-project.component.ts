@@ -67,7 +67,7 @@ export class CreateProjectComponent implements OnInit {
     this.projectService.createProject(payload).subscribe({
       next: () => {
         this.isLoading = false;
-        this.router.navigate(['user-timesheets']);
+        this.router.navigate(['/admin']);
       },
       error: (err) => {
         this.isLoading = false;

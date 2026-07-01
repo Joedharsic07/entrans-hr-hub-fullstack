@@ -98,28 +98,6 @@
             </div>
           </div>
 
-          <!-- Project Timesheets -->
-          <div
-            class="group relative bg-white rounded-2xl p-6 lg:p-8 border border-slate-200 hover:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-1"
-            (click)="navigateToUserTimesheets()">
-            <div
-              class="absolute inset-x-0 bottom-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity">
-            </div>
-
-            <div class="flex flex-col gap-5">
-              <div
-                class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-300 shadow-inner">
-                <i class="bi bi-table text-primary text-2xl"></i>
-              </div>
-              <div>
-                <h3 class="text-xl font-bold text-slate-800 mb-2 group-hover:text-primary transition-colors">Project
-                  Timesheets</h3>
-                <p class="text-slate-500 leading-relaxed font-medium">Track, oversee and manage all project-related
-                  timesheets in one central place.</p>
-              </div>
-            </div>
-          </div>
-
           <!-- Project Members -->
           <div
             class="group relative bg-white rounded-2xl p-6 lg:p-8 border border-slate-200 hover:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-1"
@@ -142,27 +120,68 @@
 
         </div>
 
-        <!-- Non-Admin User Card -->
-        <div *ngIf="!isAdmin" class="max-w-xl">
-          <div
-            class="group relative bg-white rounded-2xl p-8 border border-slate-200 hover:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-1"
-            (click)="navigateToUserTimesheets()">
-            <div
-              class="absolute inset-x-0 bottom-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity">
+        <!-- Non-Admin: Project Cards -->
+        <div *ngIf="!isAdmin" class="w-full">
+
+          <!-- Loading -->
+          <div *ngIf="projectsLoading" class="flex items-center justify-center py-20">
+            <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </div>
+
+          <!-- Empty state -->
+          <div *ngIf="!projectsLoading && userProjects.length === 0"
+            class="bg-white rounded-2xl border border-dashed border-slate-300 p-16 text-center shadow-sm">
+            <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+              <i class="bi bi-folder-x text-3xl text-slate-400"></i>
+            </div>
+            <p class="font-bold text-slate-600 text-lg">No projects assigned</p>
+            <p class="text-slate-400 text-sm mt-1">You haven't been added to any project yet. Contact your administrator.</p>
+          </div>
+
+          <!-- Project cards grid -->
+          <div *ngIf="!projectsLoading && userProjects.length > 0"
+            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+
+            <div *ngFor="let project of userProjects"
+              class="group relative bg-white rounded-2xl p-6 lg:p-8 border border-slate-200 hover:border-primary/50 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-1"
+              (click)="navigateToTimesheet(project.timesheets_link)">
+
+              <div class="absolute inset-x-0 bottom-0 h-1 bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+              <div class="flex flex-col gap-5">
+                <!-- Icon + role badge -->
+                <div class="flex items-start justify-between">
+                  <div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-300 shadow-inner">
+                    <i class="bi bi-folder2-open text-primary text-2xl"></i>
+                  </div>
+                  <span class="px-3 py-1 rounded-full text-xs font-bold border"
+                    [ngClass]="project.role === 'owner'
+                      ? 'bg-primary/10 text-primary border-primary/20'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'">
+                    <i class="bi mr-1"
+                      [ngClass]="project.role === 'owner' ? 'bi-shield-fill-check' : 'bi-person-check-fill'"></i>
+                    {{ project.role | titlecase }}
+                  </span>
+                </div>
+
+                <div>
+                  <h3 class="text-xl font-bold text-slate-800 mb-1 group-hover:text-primary transition-colors">
+                    {{ project.project_name }}
+                  </h3>
+                  <p class="text-slate-500 text-sm font-medium">Click to view &amp; manage your timesheet entries.</p>
+                </div>
+
+                <!-- Footer arrow -->
+                <div class="flex items-center gap-2 text-primary text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span>Open Timesheet</span>
+                  <i class="bi bi-arrow-right text-xs"></i>
+                </div>
+              </div>
             </div>
 
-            <div class="flex items-start gap-6">
-              <div
-                class="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-300 shadow-inner">
-                <i class="bi bi-calendar-range text-primary text-3xl"></i>
-              </div>
-              <div>
-                <h3 class="text-2xl font-bold text-slate-800 mb-2 group-hover:text-primary transition-colors">My
-                  Timesheet</h3>
-                <p class="text-slate-500 leading-relaxed font-medium text-lg">Precision Time Tracking for Professional
-                  Excellence. Log your daily work quickly and efficiently.</p>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -190,7 +209,7 @@
             <!-- Upload Option -->
             <div
               class="group bg-white p-5 rounded-xl border border-slate-200 hover:border-primary/50 hover:shadow-sm hover:bg-slate-50 transition-all cursor-pointer"
-              (click)="navigateToTimesheet()">
+              (click)="navigateToTimesheet_upload()">
               <div class="flex items-center gap-4">
                 <div
                   class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">

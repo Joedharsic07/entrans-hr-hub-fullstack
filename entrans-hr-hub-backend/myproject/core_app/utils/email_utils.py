@@ -1,13 +1,18 @@
 import smtplib
+import ssl
+import logging
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from django.conf import settings
 from collections import defaultdict
+
+logger = logging.getLogger(__name__)
 
 class EmailSender:
     def __init__(self):
         """Initialize email sender with SMTP settings"""
         self.smtp_server = settings.SMTP_SERVER
-        self.smtp_port = settings.SMTP_PORT
+        self.smtp_port = int(settings.SMTP_PORT or 587)
         self.smtp_username = settings.SMTP_USERNAME
         self.smtp_password = settings.SMTP_PASSWORD
         self.from_email = settings.DEFAULT_FROM_EMAIL
@@ -100,15 +105,21 @@ class EmailSender:
             return False, 0
 
         try:
-            msg = MIMEText(email_body)
+            msg = MIMEMultipart('alternative')
             msg['Subject'] = f"ACTION REQUIRED: {subject}"
             msg['From'] = self.from_email
             msg['To'] = recipient_email
+            msg.attach(MIMEText(email_body, 'plain'))
+
+            context = ssl.create_default_context()
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
-                server.set_debuglevel(1)
-                server.starttls()
+                server.ehlo()
+                server.starttls(context=context)
+                server.ehlo()
                 server.login(self.smtp_username, self.smtp_password)
                 server.sendmail(self.from_email, [recipient_email], msg.as_string())
+
+            logger.info(f"Flagged timesheet email sent to {recipient_email}")
 
             validated_data = json_data.get('validated_data', {})
             flagged_count = 0
@@ -127,9 +138,14 @@ class EmailSender:
 
             return True, flagged_count
 
+        except smtplib.SMTPAuthenticationError as e:
+            logger.error(f"SMTP authentication failed for {recipient_email}: {str(e)}")
+            return False, 0
         except smtplib.SMTPException as e:
+            logger.error(f"SMTP error sending to {recipient_email}: {str(e)}")
             return False, 0
         except Exception as e:
+            logger.error(f"Unexpected error sending email to {recipient_email}: {str(e)}")
             return False, 0
     
     def get_flag_count(self, json_data):

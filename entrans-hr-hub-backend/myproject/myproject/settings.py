@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "rest_framework_simplejwt",
+    "django_crontab",
 ]
 
 MIDDLEWARE = [
@@ -203,3 +204,9 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
 
 FRONTEND_BASE_URL = "https://entrans-hr-hub-fullstasck.vercel.app"
+
+# Cron job: send timesheet reminders on the 18th of every month at 18:00
+CRONJOBS = [
+    ('0 18 18 * *', 'django.core.management.call_command', ['send_timesheet_reminders'],
+     {}, '>> /tmp/timesheet_reminders.log 2>&1'),
+]

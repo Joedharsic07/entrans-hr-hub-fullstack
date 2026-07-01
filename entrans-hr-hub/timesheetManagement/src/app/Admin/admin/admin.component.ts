@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { ServiceService } from '../Service/service.service';
 
 @Component({
   selector: 'app-admin',
@@ -7,18 +8,45 @@ import { Router } from '@angular/router';
   styleUrl: './admin.component.css'
 })
 export class AdminComponent implements OnInit {
-  constructor(private router: Router) {}
+  constructor(private router: Router, private service: ServiceService) {}
 
   showTimesheetOptions: boolean = false;
   isAdmin: boolean = false;
 
   role = sessionStorage.getItem('role');
 
+  // Non-admin user projects
+  userProjects: any[] = [];
+  projectsLoading = false;
+
   ngOnInit() {
-    if (this.role === 'Admin') this.isAdmin = true;
+    if (this.role === 'Admin') {
+      this.isAdmin = true;
+    } else {
+      this.loadUserProjects();
+    }
   }
 
-  navigateToTimesheet() {
+  loadUserProjects(): void {
+    this.projectsLoading = true;
+    this.service.userTimesheetlist().subscribe({
+      next: (res: any) => {
+        this.userProjects = res.projects || [];
+        this.projectsLoading = false;
+      },
+      error: () => { this.projectsLoading = false; }
+    });
+  }
+
+  navigateToTimesheet(timesheetsLink: string): void {
+    this.router.navigate(['/' + timesheetsLink]);
+  }
+
+  navigateToTimesheetOptions() {
+    this.showTimesheetOptions = true;
+  }
+
+  navigateToTimesheet_upload() {
     this.showTimesheetOptions = false;
     this.router.navigate(['/timesheet']);
   }
@@ -30,10 +58,6 @@ export class AdminComponent implements OnInit {
 
   navigateToPpt() {
     this.router.navigate(['/ppt-automation']);
-  }
-
-  navigateToUserTimesheets() {
-    this.router.navigate(['/user-timesheets']);
   }
 
   navigateToCreateProject() {
