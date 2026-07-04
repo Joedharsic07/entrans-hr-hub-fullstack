@@ -1,138 +1,119 @@
 <div class="flex h-full fixed pointer-events-none">
   <!-- Sidebar -->
   <aside [class.hidden]="sidebarHidden" [class.w-20]="sidebarHidden" [class.w-72]="!sidebarHidden"
-    class="bg-primary text-slate-200 transition-all duration-300 flex flex-col shadow-xl border-r border-primary/20 h-screen z-50 overflow-y-auto overflow-x-hidden pointer-events-auto">
+    class="bg-[#1e40af] text-white transition-all duration-300 flex flex-col shadow-xl border-r border-blue-700/30 h-screen z-50 overflow-y-auto overflow-x-hidden pointer-events-auto">
 
     <!-- Logo Area Top -->
-    <div
-      class="h-20 flex items-center justify-center border-b border-white/10 sticky top-0 bg-primary z-10 shrink-0"
-      [ngClass]="{'px-6 justify-start': !sidebarHidden}">
+    <div class="h-20 flex items-center border-b border-white/10 sticky top-0 bg-[#1e40af] z-10 shrink-0"
+      [ngClass]="{'px-6 justify-start': !sidebarHidden, 'justify-center': sidebarHidden}">
       <div
-        class="w-10 h-10 rounded-xl bg-white text-primary flex items-center justify-center shadow-md font-extrabold text-xl shrink-0">
+        class="w-10 h-10 rounded-xl bg-white text-[#1e40af] flex items-center justify-center shadow-md font-extrabold text-lg shrink-0">
         HR
       </div>
       <div *ngIf="!sidebarHidden" class="ml-3 flex flex-col">
         <span class="font-extrabold text-white text-lg tracking-tight leading-none">HR Hub</span>
-        <span class="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-0.5">Elite Edition</span>
+        <span class="text-white/50 text-[10px] font-bold uppercase tracking-widest mt-0.5">Elite Edition</span>
       </div>
     </div>
 
     <!-- Navigation -->
-    <div class="flex flex-col w-full py-6 px-4 gap-2">
+    <div class="flex flex-col w-full py-5 px-3 gap-1.5 flex-1">
 
-      <!-- Section Label -->
-      <div *ngIf="!sidebarHidden" class="px-3 mb-2 mt-2">
-        <span class="text-xs font-bold text-white/40 uppercase tracking-wider">Main Menu</span>
+      <!-- Dashboard -->
+      <div class="group">
+        <a routerLink="/admin" routerLinkActive="sidebar-active" [routerLinkActiveOptions]="{exact: true}"
+          class="sidebar-nav-link" [ngClass]="{'justify-center': sidebarHidden}">
+          <i class="bi bi-grid-1x2-fill sidebar-nav-icon"></i>
+          <span *ngIf="!sidebarHidden" class="sidebar-nav-text">Dashboard</span>
+        </a>
       </div>
 
       <!-- My Profile -->
       <div class="group">
-        <a routerLink="/user-profile" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
-          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap text-white hover:bg-white/10 hover:text-white"
+        <a routerLink="/user-profile" routerLinkActive="sidebar-active" class="sidebar-nav-link"
           [ngClass]="{'justify-center': sidebarHidden}">
-          <i
-            class="bi bi-person-circle flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
-          <span class="font-semibold ml-3" *ngIf="!sidebarHidden">My Profile</span>
+          <i class="bi bi-person-circle sidebar-nav-icon"></i>
+          <span *ngIf="!sidebarHidden" class="sidebar-nav-text">My Profile</span>
         </a>
       </div>
 
-      <!-- Dashboard -->
-      <div class="group">
-        <a routerLink="/admin" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
-          [routerLinkActiveOptions]="{exact: true}"
-          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap text-white hover:bg-white/10 hover:text-white"
-          [ngClass]="{'justify-center': sidebarHidden}">
-          <i
-            class="bi bi-grid-1x2 flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
-          <span class="font-semibold ml-3" *ngIf="!sidebarHidden">Dashboard</span>
-        </a>
-      </div>
-
-      <!-- Section Label -->
-      <div *ngIf="isAdmin && !sidebarHidden" class="px-3 mb-2 mt-6">
-        <span class="text-xs font-bold text-white/40 uppercase tracking-wider">Administration</span>
-      </div>
-
-      <!-- Timesheet Automation with dropdown -->
+      <!-- Timesheet Tools with dropdown -->
       <div *ngIf="isAdmin" class="group">
         <div class="relative">
-          <button (click)="toggleTimesheetDropdown()"
-            class="flex items-center w-full rounded-xl py-3 px-3 transition-all duration-200 text-white hover:bg-white/10 hover:text-white focus:outline-none"
-            [ngClass]="{'justify-center': sidebarHidden, 'bg-white/10 text-white': showTimesheetDropdown && !sidebarHidden}">
-            <i class="bi bi-calendar-range flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"
-              [ngClass]="{'text-white': showTimesheetDropdown}"></i>
-            <span class="font-semibold ml-3 flex-1 text-left" *ngIf="!sidebarHidden">Timesheet Tools</span>
-            <i *ngIf="!sidebarHidden" class="bi text-xs transition-transform"
-              [ngClass]="showTimesheetDropdown ? 'bi-chevron-up text-white' : 'bi-chevron-down text-white/50'"></i>
+          <button (click)="toggleTimesheetDropdown()" class="sidebar-nav-link w-full"
+            [ngClass]="{'justify-center': sidebarHidden, 'sidebar-active': showTimesheetDropdown && !sidebarHidden}">
+            <i class="bi bi-calendar-range sidebar-nav-icon"></i>
+            <span class="sidebar-nav-text flex-1 text-left" *ngIf="!sidebarHidden">Timesheet Tools</span>
+            <i *ngIf="!sidebarHidden" class="bi text-[10px] transition-transform ml-auto"
+              [ngClass]="showTimesheetDropdown ? 'bi-chevron-up text-white' : 'bi-chevron-down text-white/40'"></i>
           </button>
 
           <!-- Dropdown items -->
           <div *ngIf="!sidebarHidden && showTimesheetDropdown"
-            class="ml-4 mt-2 mb-2 pl-4 border-l border-white/20 space-y-1 overflow-hidden">
-            <a routerLink="/timesheet" routerLinkActive="text-white bg-white/20 font-bold"
-              class="flex items-center rounded-lg py-2 px-3 transition-all duration-200 no-underline whitespace-nowrap text-sm text-white hover:text-white hover:bg-white/10">
-              <i class="bi bi-cloud-arrow-up text-base mr-3"></i>
-              <span class="font-medium">Upload Automation</span>
+            class="ml-4 mt-1.5 mb-1.5 pl-3 border-l-2 border-white/15 space-y-1">
+            <a routerLink="/timesheet" routerLinkActive="text-white bg-white/20 font-bold" class="sidebar-sub-link">
+              <i class="bi bi-cloud-arrow-up text-sm mr-2.5"></i>
+              <span>Upload Automation</span>
             </a>
             <a routerLink="/validation-timesheet" routerLinkActive="text-white bg-white/20 font-bold"
-              class="flex items-center rounded-lg py-2 px-3 transition-all duration-200 no-underline whitespace-nowrap text-sm text-white hover:text-white hover:bg-white/10">
-              <i class="bi bi-clipboard-check text-base mr-3"></i>
-              <span class="font-medium">Manual Validation</span>
+              class="sidebar-sub-link">
+              <i class="bi bi-clipboard-check text-sm mr-2.5"></i>
+              <span>Manual Validation</span>
             </a>
           </div>
         </div>
       </div>
 
-      <!-- PPT Automation -->
+      <!-- Anniversary Slides -->
       <div *ngIf="isAdmin" class="group">
-        <a routerLink="/ppt-automation" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
-          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap text-white hover:bg-white/10 hover:text-white"
+        <a routerLink="/ppt-automation" routerLinkActive="sidebar-active" class="sidebar-nav-link"
           [ngClass]="{'justify-center': sidebarHidden}">
-          <i
-            class="bi bi-file-earmark-slides flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
-          <span class="font-semibold ml-3" *ngIf="!sidebarHidden">Anniversary Slides</span>
+          <i class="bi bi-file-earmark-slides sidebar-nav-icon"></i>
+          <span *ngIf="!sidebarHidden" class="sidebar-nav-text">Anniversary Slides</span>
         </a>
       </div>
 
       <!-- Create Project -->
       <div *ngIf="isAdmin" class="group">
-        <a routerLink="/create-project" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
-          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap text-white hover:bg-white/10 hover:text-white"
+        <a routerLink="/create-project" routerLinkActive="sidebar-active" class="sidebar-nav-link"
           [ngClass]="{'justify-center': sidebarHidden}">
-          <i
-            class="bi bi-folder-plus flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
-          <span class="font-semibold ml-3" *ngIf="!sidebarHidden">Create Project</span>
+          <i class="bi bi-folder-plus sidebar-nav-icon"></i>
+          <span *ngIf="!sidebarHidden" class="sidebar-nav-text">Create Project</span>
         </a>
       </div>
 
-      <!-- Project Members (admin only) -->
+      <!-- Project Members -->
       <div *ngIf="isAdmin" class="group">
-        <a routerLink="/project-members" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
-          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap text-white hover:bg-white/10 hover:text-white"
+        <a routerLink="/project-members" routerLinkActive="sidebar-active" class="sidebar-nav-link"
           [ngClass]="{'justify-center': sidebarHidden}">
-          <i
-            class="bi bi-people-fill flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
-          <span class="font-semibold ml-3" *ngIf="!sidebarHidden">Project Members</span>
+          <i class="bi bi-people-fill sidebar-nav-icon"></i>
+          <span *ngIf="!sidebarHidden" class="sidebar-nav-text">Project Members</span>
         </a>
       </div>
 
-      <!-- User List (admin only) -->
+      <!-- User List -->
       <div *ngIf="isAdmin" class="group">
-        <a routerLink="/user-list" routerLinkActive="bg-white/15 text-white font-bold border-l-4 border-white"
-          class="flex items-center rounded-xl py-3 px-3 transition-all duration-200 no-underline whitespace-nowrap text-white hover:bg-white/10 hover:text-white"
+        <a routerLink="/user-list" routerLinkActive="sidebar-active" class="sidebar-nav-link"
           [ngClass]="{'justify-center': sidebarHidden}">
-          <i
-            class="bi bi-people flex items-center justify-center text-lg shrink-0 transition-transform group-hover:scale-105"></i>
-          <span class="font-semibold ml-3" *ngIf="!sidebarHidden">User List</span>
+          <i class="bi bi-people sidebar-nav-icon"></i>
+          <span *ngIf="!sidebarHidden" class="sidebar-nav-text">User List</span>
         </a>
       </div>
 
     </div>
 
-    <!-- Bottom Footer -->
-    <div class="mt-auto border-t border-white/10 px-4 py-3 shrink-0">
-      <div class="flex items-center justify-center text-white/30 text-xs font-medium" *ngIf="!sidebarHidden">
-        v2.0 Elite Edition
+    <!-- Bottom section -->
+    <div class="mt-auto border-t border-white/10 px-3 py-3 shrink-0 space-y-1.5">
+      <a class="sidebar-nav-link" [ngClass]="{'justify-center': sidebarHidden}">
+        <i class="bi bi-question-circle sidebar-nav-icon"></i>
+        <span *ngIf="!sidebarHidden" class="sidebar-nav-text">Help</span>
+      </a>
+      <a class="sidebar-nav-link" [ngClass]="{'justify-center': sidebarHidden}">
+        <i class="bi bi-headset sidebar-nav-icon"></i>
+        <span *ngIf="!sidebarHidden" class="sidebar-nav-text">Support</span>
+      </a>
+      <div class="flex items-center justify-center mt-2 mb-1" *ngIf="!sidebarHidden">
+        <span class="sidebar-version-badge">V2.0 ELITE EDITION</span>
       </div>
     </div>
   </aside>
@@ -149,8 +130,7 @@
   class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4"
   (click)="closeChangePassword()">
 
-  <div class="card !p-0 w-full max-w-md overflow-hidden"
-    (click)="$event.stopPropagation()">
+  <div class="card !p-0 w-full max-w-md overflow-hidden" (click)="$event.stopPropagation()">
 
     <!-- Modal Header -->
     <div class="flex justify-between items-center px-6 py-5 border-b border-slate-100">
@@ -189,9 +169,8 @@
         <div>
           <label class="label-text">Current Password</label>
           <div class="relative">
-            <input [(ngModel)]="cpForm.old_password" name="old_password"
-              [type]="showOldPwd ? 'text' : 'password'" placeholder="Enter current password"
-              class="form-input pr-10" />
+            <input [(ngModel)]="cpForm.old_password" name="old_password" [type]="showOldPwd ? 'text' : 'password'"
+              placeholder="Enter current password" class="form-input pr-10" />
             <button type="button" (click)="showOldPwd = !showOldPwd"
               class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-700 hover:text-slate-900 focus:outline-none">
               <i [class]="showOldPwd ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
@@ -203,9 +182,8 @@
         <div>
           <label class="label-text">New Password</label>
           <div class="relative">
-            <input [(ngModel)]="cpForm.new_password" name="new_password"
-              [type]="showNewPwd ? 'text' : 'password'" placeholder="Minimum 8 characters"
-              class="form-input pr-10" />
+            <input [(ngModel)]="cpForm.new_password" name="new_password" [type]="showNewPwd ? 'text' : 'password'"
+              placeholder="Minimum 8 characters" class="form-input pr-10" />
             <button type="button" (click)="showNewPwd = !showNewPwd"
               class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-700 hover:text-slate-900 focus:outline-none">
               <i [class]="showNewPwd ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
@@ -229,13 +207,12 @@
 
         <!-- Actions -->
         <div class="flex gap-3 pt-2">
-          <button type="button" (click)="closeChangePassword()"
-            class="btn btn-secondary flex-1">
+          <button type="button" (click)="closeChangePassword()" class="btn btn-secondary flex-1">
             Cancel
           </button>
-          <button type="submit" [disabled]="cpLoading"
-            class="btn btn-primary flex-1">
-            <span *ngIf="cpLoading" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <button type="submit" [disabled]="cpLoading" class="btn btn-primary flex-1">
+            <span *ngIf="cpLoading"
+              class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             <span>{{ cpLoading ? 'Saving...' : 'Change Password' }}</span>
           </button>
         </div>
