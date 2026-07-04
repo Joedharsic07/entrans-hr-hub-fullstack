@@ -23,6 +23,8 @@ from .views import (
     TimeTrackingEmailAPI,
     UserTimesheetListView,
     UserListAPIView,
+    MeView,
+    UserAccessLogView,
     ValidateMultipleTimesheetView,
     PushTimesheetEmailView,
     ProjectUserRolesView,
@@ -98,6 +100,8 @@ urlpatterns = [
     path(
         "project-user-roles/<int:project_id>/", ProjectUsersView.as_view(), name="project-users"
     ),
+    path("me/", MeView.as_view(), name="me"),
+    path("access-logs/", UserAccessLogView.as_view(), name="access-logs"),
     path("create-user/", CreateUserView.as_view(), name="create-user"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("admin-users/", UserAdminView.as_view(), name="admin-users"),

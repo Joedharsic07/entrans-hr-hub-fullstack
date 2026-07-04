@@ -32,6 +32,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     password_expires_at = models.DateTimeField(null=True, blank=True)
+    password_changed_at = models.DateTimeField(null=True, blank=True)
     objects = UserManager()
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name']
@@ -151,3 +152,29 @@ class TimesheetEmailLog(models.Model):
     
     class Meta:
         db_table = "timesheet_email_log"
+
+
+class UserAccessLog(models.Model):
+    ACTION_CHOICES = [
+        ('login', 'Login'),
+        ('logout', 'Logout'),
+        ('password_change', 'Password Change'),
+        ('password_reset', 'Password Reset'),
+    ]
+    STATUS_CHOICES = [
+        ('success', 'Success'),
+        ('failed', 'Failed'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='access_logs')
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES, default='login')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='success')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=500, blank=True, default='')
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'user_access_log'
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.user.email} - {self.action} - {self.timestamp}"

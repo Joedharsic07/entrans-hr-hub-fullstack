@@ -26,9 +26,10 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ('id', 'user_id', 'name', 'first_name', 'last_name', 'designation', 'email', 'password', 'role', 'is_active')  
+        fields = ('id', 'user_id', 'name', 'first_name', 'last_name', 'designation', 'email', 'password', 'role', 'is_active', 'password_changed_at')
         extra_kwargs = {
-            'password': {'write_only': True}
+            'password': {'write_only': True},
+            'password_changed_at': {'read_only': True},
         }
 
     def get_role(self, obj):

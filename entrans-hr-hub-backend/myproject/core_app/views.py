@@ -13,7 +13,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny
 from core_app.auth import EmailAuthBackend
 from .jwt_utils import get_user_from_token, verify_token, generate_token
-from .models import TimesheetEmailLog, User, Timesheet, Project, UserProject
+from .models import TimesheetEmailLog, User, Timesheet, Project, UserProject, UserAccessLog
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 from django.contrib.auth import get_user_model, authenticate
@@ -133,6 +133,44 @@ def verify_password_reset_token(token):
         raise ValueError("Invalid or expired token")
 
 
+def _get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+
+def _parse_user_agent(ua_string: str) -> str:
+    if not ua_string:
+        return 'Unknown device'
+    ua = ua_string.lower()
+    if 'chrome' in ua and 'edg' not in ua and 'opr' not in ua:
+        browser = 'Chrome'
+    elif 'firefox' in ua:
+        browser = 'Firefox'
+    elif 'safari' in ua and 'chrome' not in ua:
+        browser = 'Safari'
+    elif 'edg' in ua:
+        browser = 'Edge'
+    elif 'opr' in ua or 'opera' in ua:
+        browser = 'Opera'
+    else:
+        browser = 'Browser'
+    if 'windows' in ua:
+        os_name = 'Windows'
+    elif 'macintosh' in ua or 'mac os' in ua:
+        os_name = 'macOS'
+    elif 'android' in ua:
+        os_name = 'Android'
+    elif 'iphone' in ua or 'ipad' in ua:
+        os_name = 'iOS'
+    elif 'linux' in ua:
+        os_name = 'Linux'
+    else:
+        os_name = 'Unknown OS'
+    return f'{browser} on {os_name}'
+
+
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
@@ -144,6 +182,31 @@ class UserListAPIView(APIView):
         User = get_user_model()
         users = User.objects.all().values('id', 'name', 'email')
         return Response(users)
+
+
+# Current authenticated user profile
+class MeView(APIView):
+    def get(self, request):
+        user = get_user_from_request(request)
+        if not user:
+            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        serializer = UserSerializer(user)
+        data = dict(serializer.data)
+
+        user_projects = UserProject.objects.filter(user=user).select_related('project')
+        data['projects'] = [
+            {
+                'user_project_id': up.id,
+                'project_id': up.project.id,
+                'project_name': up.project.name,
+                'role': up.role,
+            }
+            for up in user_projects
+        ]
+        data['projects_count'] = len(data['projects'])
+
+        return Response(data)
 
 #Register API
 class RegisterView(APIView):
@@ -211,6 +274,17 @@ class LoginView(APIView):
                             "code": "account_inactive",
                             "message": "Account is inactive"
                         }, status=status.HTTP_403_FORBIDDEN)
+
+                    try:
+                        UserAccessLog.objects.create(
+                            user=db_user,
+                            action='login',
+                            status='failed',
+                            ip_address=_get_client_ip(request),
+                            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500]
+                        )
+                    except Exception:
+                        pass
                         
                     return Response({
                         "status": "error",
@@ -235,6 +309,17 @@ class LoginView(APIView):
                     "code": "password_expired",
                     "message": "Your temporary password has expired. Please contact your administrator."
                 }, status=status.HTTP_401_UNAUTHORIZED)
+
+            try:
+                UserAccessLog.objects.create(
+                    user=user,
+                    action='login',
+                    status='success',
+                    ip_address=_get_client_ip(request),
+                    user_agent=request.META.get('HTTP_USER_AGENT', '')[:500]
+                )
+            except Exception:
+                pass
 
             return Response({
                 "status": "success",
@@ -1923,6 +2008,7 @@ class ChangePasswordView(APIView):
         try:
             user.set_password(new_password)
             user.password_expires_at = None  # clear any temporary-password expiry
+            user.password_changed_at = now()
             user.save()
 
             from core_app.utils.email_service import EmailService
@@ -2062,6 +2148,31 @@ class UserAdminDetailView(APIView):
 
         target.delete()
         return Response({"message": "User deleted successfully"}, status=status.HTTP_200_OK)
+
+
+# ---------------------------------------------------------------------------
+# User Access Logs
+# ---------------------------------------------------------------------------
+
+class UserAccessLogView(APIView):
+    def get(self, request):
+        user = get_user_from_request(request)
+        if not user:
+            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        logs = user.access_logs.all()[:50]
+        data = [
+            {
+                'id': log.id,
+                'action': log.action,
+                'status': log.status,
+                'ip_address': log.ip_address,
+                'device': _parse_user_agent(log.user_agent),
+                'timestamp': log.timestamp.isoformat(),
+            }
+            for log in logs
+        ]
+        return Response(data)
 
 
 # ---------------------------------------------------------------------------
