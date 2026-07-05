@@ -44,11 +44,13 @@ class TimeValidator:
             sheet_name = str(row["Description"]).strip() if pd.notna(row["Description"]) else ""
             hours = row["Hours"]
 
-            is_leave_type = any(leave_type.lower() in client.lower() for leave_type in ["leave", "holiday", "weekend"])
+            is_leave_type = any(leave_type.lower() in text.lower() for leave_type in ["leave", "holiday", "weekend"] for text in [client, sheet_name])
 
             if is_leave_type:
-                if pd.notna(hours) and hours != 0:
+                # If they filled in actual hours on a leave/holiday, flag it
+                if pd.notna(hours) and str(hours).strip().lower() not in ["", "0", "0.0", "n/a", "nan", "none"]:
                     df.at[index, "Status"] = "Leave/Holiday should be 0 or empty"
+                    df.at[index, "Flag"] = "⚠ Holiday/Leave Hours Filled;"
                 else:
                     df.at[index, "Status"] = "Valid"
             else:
@@ -75,9 +77,15 @@ class TimeValidator:
                 parsed_date = parse(date_str)
                 df.at[index, "Date"] = parsed_date.strftime("%Y-%m-%d")
                 if parsed_date.weekday() >= 5:  
-                    if row["Hours"] not in [0, '0', 0.0, None, '']: 
+                    df.at[index, "Status"] = "Valid"
+                    df.at[index, "Flag"] = ""
+                    
+                    hours_val = str(row["Hours"]).strip().lower()
+                    if pd.notna(row["Hours"]) and hours_val not in ["", "0", "0.0", "n/a", "nan", "none"]:
                         df.at[index, "Status"] = "Timesheet filled on weekend"
-                        df.at[index, "Flag"] += "⚠ Weekend Entry; "
+                        df.at[index, "Flag"] = "⚠ Weekend Entry;"
+                        if not str(row["Description"]).strip():
+                            df.at[index, "Flag"] += " ⚠ Blank Description;"
             except Exception:
                 df.at[index, "Date"] = None
 
@@ -108,6 +116,9 @@ class TimeValidator:
 
             if any(df["Status"] == "Invalid Hours Format"):
                 issues.append("Invalid hour format")
+                
+            if any(df["Status"] == "Timesheet filled on weekend"):
+                issues.append("Billed hours on a weekend")
 
             if any(df["Flag"].str.contains("Blank Description", na=False)):
                 issues.append("Has blank descriptions")
@@ -370,6 +381,8 @@ class OutputManager:
                     issues.append("Missing hours entries")
                 if any(df["Status"] == "Invalid Hours Format"):
                     issues.append("Invalid hour format")
+                if any(df["Status"] == "Timesheet filled on weekend"):
+                    issues.append("Billed hours on a weekend")
                 review_msg = ", ".join(issues)
             else:
                 review_msg = "OK"
@@ -435,6 +448,8 @@ class OutputManager:
                     issues.append("Missing hours entries")
                 if any(df["Status"] == "Invalid Hours Format"):
                     issues.append("Invalid hour format")
+                if any(df["Status"] == "Timesheet filled on weekend"):
+                    issues.append("Billed hours on a weekend")
                 review_msg = ", ".join(issues)
             else:
                 review_msg = "OK"
@@ -498,7 +513,7 @@ class OutputManager:
         except Exception as e:
             return None, None
 
-    def generate_monthly_template(self, month=None, year=None):
+    def generate_monthly_template(self, month=None, year=None, username=None):
         """Generate a new template for a specific month."""
         current_date = datetime.now()
         if month is None:
@@ -533,7 +548,10 @@ class OutputManager:
                 "Hours": hours
             })
         monthly_df = pd.DataFrame(data)
-        output_name = f"Timesheet_{month_name}_{year}.xlsx"
+        if username:
+            output_name = f"{username}_{month_name}_{year}.xlsx"
+        else:
+            output_name = f"Timesheet_{month_name}_{year}.xlsx"
         output_path = os.path.join(self.output_dir, output_name)
 
         try:

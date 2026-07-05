@@ -1426,21 +1426,37 @@ class TimeTrackingAPI(APIView):
                 "validation_type", "standard"
             )
             validation_number = 1 if validation_type == "custom" else None
+            
+            new_file_name = timesheet_file.name
+
+            import math
+            def sanitize_nans(obj):
+                if isinstance(obj, dict):
+                    return {k: sanitize_nans(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [sanitize_nans(v) for v in obj]
+                elif isinstance(obj, float):
+                    if math.isnan(obj) or math.isinf(obj):
+                        return None
+                    return obj
+                return obj
+
             validated_file_path = output_manager.save_validated_data(
                 validation_result, validation_number
             )
 
+            response_data = {
+                "file_name": new_file_name,
+                "validated_data": validated_sheets,
+                "validation_summary": summary_data,
+                "success": True,
+            }
+
             if validated_file_path:
                 zip_path = output_manager.create_zip_archive(validated_file_path)
 
-            return Response(
-                {
-                    "file_name": timesheet_file.name,
-                    "validated_data": validated_sheets,
-                    "validation_summary": summary_data,
-                    "success": True,
-                }
-            )
+            return Response(sanitize_nans(response_data))
+
 
         except Exception as e:
             return Response(
@@ -1473,7 +1489,13 @@ class TimeTrackingTemplateAPI(APIView):
             month = serializer.validated_data.get("month")
             year = serializer.validated_data.get("year")
 
-            template_path = output_manager.generate_monthly_template(month, year)
+            user_name = "User"
+            if request.user.is_authenticated:
+                user_name = request.user.name.split()[0] if getattr(request.user, "name", None) else request.user.first_name
+                if not user_name:
+                    user_name = "User"
+
+            template_path = output_manager.generate_monthly_template(month, year, user_name)
 
             if template_path and os.path.exists(template_path):
                 return Response(
