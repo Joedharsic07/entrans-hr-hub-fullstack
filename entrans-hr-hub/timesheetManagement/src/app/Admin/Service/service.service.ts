@@ -78,6 +78,10 @@ export class ServiceService {
     return this.httpClient.patch(`${this.baseUrl}/admin-users/${userId}/`, { is_active: isActive });
   }
 
+  editAdminUser(userId: number, data: any): Observable<any> {
+    return this.httpClient.patch(`${this.baseUrl}/admin-users/${userId}/`, data);
+  }
+
   deleteAdminUser(userId: number): Observable<any> {
     return this.httpClient.delete(`${this.baseUrl}/admin-users/${userId}/`);
   }

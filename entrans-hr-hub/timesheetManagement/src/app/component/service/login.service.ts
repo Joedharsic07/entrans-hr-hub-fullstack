@@ -37,6 +37,9 @@ changePassword(data: any): Observable<any> {
 getMyProfile(): Observable<any> {
   return this.http.get(`${this.baseUrl}/me/`)
 }
+updateProfile(data: any): Observable<any> {
+  return this.http.put(`${this.baseUrl}/me/`, data)
+}
 getAccessLogs(): Observable<any> {
   return this.http.get(`${this.baseUrl}/access-logs/`)
 }

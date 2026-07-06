@@ -19,6 +19,8 @@ export class UserListComponent implements OnInit, OnDestroy {
   page = 1;
   totalPages = 1;
   totalCount = 0;
+  activeCount = 0;
+  rolesCount = 0;
   readonly pageSize = 15;
 
   // Delete confirm modal
@@ -36,6 +38,14 @@ export class UserListComponent implements OnInit, OnDestroy {
   createLoading = false;
   createError = '';
   createSuccess = '';
+
+  // Edit User modal
+  showEditModal = false;
+  editForm!: FormGroup;
+  editLoading = false;
+  editError = '';
+  editSuccess = '';
+  editTarget: any = null;
 
   private search$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -55,6 +65,14 @@ export class UserListComponent implements OnInit, OnDestroy {
       designation: [''],
       role: ['user', Validators.required]
     });
+    
+    this.editForm = this.fb.group({
+      first_name: ['', [Validators.required, Validators.minLength(2)]],
+      last_name: ['', [Validators.required, Validators.minLength(2)]],
+      designation: [''],
+      role: ['user', Validators.required]
+    });
+
     this.loadUsers();
 
     this.search$.pipe(
@@ -83,6 +101,8 @@ export class UserListComponent implements OnInit, OnDestroy {
         this.totalCount = res.count;
         this.totalPages = res.total_pages;
         this.page = res.current_page;
+        this.activeCount = res.active_count || 0;
+        this.rolesCount = res.roles_count || 0;
         this.loading = false;
       },
       error: () => { this.loading = false; }
@@ -196,6 +216,44 @@ export class UserListComponent implements OnInit, OnDestroy {
       error: (err: any) => {
         this.createLoading = false;
         this.createError = err.error?.error || 'Failed to create user.';
+      }
+    });
+  }
+
+  openEditModal(user: any): void {
+    this.editTarget = user;
+    this.editForm.patchValue({
+      first_name: user.first_name || user.name.split(' ')[0] || '',
+      last_name: user.last_name || user.name.split(' ').slice(1).join(' ') || '',
+      designation: user.designation || '',
+      role: (user.role || '').toLowerCase() === 'admin' ? 'superadmin' : 'user'
+    });
+    this.editError = '';
+    this.editSuccess = '';
+    this.showEditModal = true;
+  }
+
+  closeEditModal(): void {
+    this.showEditModal = false;
+    this.editTarget = null;
+  }
+
+  submitEditUser(): void {
+    if (this.editForm.invalid || !this.editTarget) return;
+    this.editLoading = true;
+    this.editError = '';
+    this.editSuccess = '';
+
+    this.service.editAdminUser(this.editTarget.id, this.editForm.value).subscribe({
+      next: (res: any) => {
+        this.editLoading = false;
+        this.editSuccess = res.message || 'User updated successfully.';
+        this.loadUsers();
+        setTimeout(() => this.closeEditModal(), 1500);
+      },
+      error: (err: any) => {
+        this.editLoading = false;
+        this.editError = err.error?.error || 'Failed to update user.';
       }
     });
   }

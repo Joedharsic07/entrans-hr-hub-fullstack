@@ -61,11 +61,19 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Maintain existing password hashing functionality"""
+        name = validated_data["name"]
+        parts = name.strip().split(" ", 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+
         user = User.objects.create_user(
             email=validated_data["email"],
-            name=validated_data["name"],
+            name=name,
             password=validated_data["password"],
         )
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
         return user
 
 
@@ -107,11 +115,19 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop("confirm_password")
+        name = validated_data["name"]
+        parts = name.strip().split(" ", 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+
         user = User.objects.create_user(
-            name=validated_data["name"],
+            name=name,
             email=validated_data["email"],
             password=validated_data["password"],
         )
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
         return user
 
 

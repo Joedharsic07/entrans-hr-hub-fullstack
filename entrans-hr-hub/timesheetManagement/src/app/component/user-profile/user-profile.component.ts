@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { LoginService } from '../service/login.service';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-user-profile',
@@ -20,9 +21,19 @@ export class UserProfileComponent implements OnInit {
   // Dynamic password-changed display
   passwordChangedText = '—';
 
-  constructor(private loginService: LoginService) {}
+  // Edit Profile
+  showEditProfile = false;
+  editForm!: FormGroup;
+  isSaving = false;
+
+  constructor(private loginService: LoginService, private fb: FormBuilder) {}
 
   ngOnInit(): void {
+    this.editForm = this.fb.group({
+      first_name: ['', Validators.required],
+      last_name: ['', Validators.required],
+      designation: ['']
+    });
     const stored = sessionStorage.getItem('profile');
     if (stored) {
       this.profile = JSON.parse(stored);
@@ -95,5 +106,37 @@ export class UserProfileComponent implements OnInit {
 
   getCollaboratorCount(): number {
     return this.projects.filter(p => p.role === 'collaborator').length;
+  }
+
+  openEditProfile(): void {
+    if (this.profile) {
+      this.editForm.patchValue({
+        first_name: this.profile.first_name || '',
+        last_name: this.profile.last_name || '',
+        designation: this.profile.designation || ''
+      });
+    }
+    this.showEditProfile = true;
+  }
+
+  closeEditProfile(): void {
+    this.showEditProfile = false;
+  }
+
+  saveProfile(): void {
+    if (this.editForm.invalid) return;
+    this.isSaving = true;
+    this.loginService.updateProfile(this.editForm.value).subscribe({
+      next: (res: any) => {
+        this.profile = res.user;
+        sessionStorage.setItem('profile', JSON.stringify(res.user));
+        this.isSaving = false;
+        this.showEditProfile = false;
+      },
+      error: (err: any) => {
+        this.isSaving = false;
+        alert('Failed to update profile');
+      }
+    });
   }
 }

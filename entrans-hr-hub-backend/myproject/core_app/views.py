@@ -223,6 +223,33 @@ class MeView(APIView):
 
         return Response(data)
 
+    def put(self, request):
+        user = get_user_from_request(request)
+        if not user:
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        first_name = request.data.get("first_name", user.first_name)
+        last_name = request.data.get("last_name", user.last_name)
+        designation = request.data.get("designation", user.designation)
+
+        user.first_name = first_name
+        user.last_name = last_name
+        user.name = f"{first_name} {last_name}".strip()
+        if designation is not None:
+            user.designation = designation
+            
+        user.save()
+
+        serializer = UserSerializer(user)
+        return Response({
+            "status": "success",
+            "message": "Profile updated successfully.",
+            "user": serializer.data
+        })
+
 
 # Register API
 class RegisterView(APIView):
@@ -2601,12 +2628,17 @@ class UserAdminView(APIView):
             for u in users
         ]
 
+        active_count = UserModel.objects.filter(is_active=True).count()
+        roles_count = 2 # Admin and User
+
         return Response(
             {
                 "count": total,
                 "total_pages": total_pages,
                 "current_page": page,
                 "page_size": page_size,
+                "active_count": active_count,
+                "roles_count": roles_count,
                 "users": data,
             }
         )
@@ -2639,7 +2671,27 @@ class UserAdminDetailView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             target.is_active = bool(request.data["is_active"])
-            target.save()
+            
+        if "first_name" in request.data or "last_name" in request.data:
+            first_name = request.data.get("first_name", target.first_name)
+            last_name = request.data.get("last_name", target.last_name)
+            target.first_name = first_name
+            target.last_name = last_name
+            target.name = f"{first_name} {last_name}".strip()
+
+        if "designation" in request.data:
+            target.designation = request.data["designation"]
+
+        if "role" in request.data:
+            new_role = request.data["role"]
+            if new_role == "superadmin":
+                target.is_staff = True
+                target.is_superuser = True
+            elif new_role == "user":
+                target.is_staff = False
+                target.is_superuser = False
+
+        target.save()
 
         return Response(
             {
