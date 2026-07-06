@@ -24,52 +24,79 @@ export class AdminComponent implements OnInit {
   // Dashboard stats
   statsLoading: boolean = true;
   totalEmployees: number | null = null;
-  timesheetsSubmitted: number = 942;
-  pendingApprovals: number = 43;
+  timesheetsSubmitted: number = 0;
+  activeProjects: number = 0;
 
   // Recent Activity
-  recentActivities: any[] = [
-    {
-      icon: 'bi bi-check-circle-fill',
-      iconClass: 'activity-icon--green',
-      text: '<strong>Sarah Jenkins</strong> approved 14 timesheets for <a class="activity-link">Project Orion</a>',
-      time: '2 minutes ago',
-      type: 'Automated Sync'
-    },
-    {
-      icon: 'bi bi-person-plus-fill',
-      iconClass: 'activity-icon--purple',
-      text: 'New user <strong>Marcus Thorne</strong> added to <a class="activity-link">Lead Developer</a> role',
-      time: '45 minutes ago',
-      type: 'Admin Action'
-    },
-    {
-      icon: 'bi bi-exclamation-triangle-fill',
-      iconClass: 'activity-icon--amber',
-      text: 'Flagged discrepancy in <strong>Project Zenith</strong> billing cycle',
-      time: '2 hours ago',
-      type: 'System Alert'
-    }
-  ];
+  recentActivities: any[] = [];
+  activitiesLoading: boolean = true;
 
   // Upcoming Anniversaries
-  upcomingAnniversaries: any[] = [
-    { name: 'Elena Rodriguez', years: '5 Years', date: 'Oct 14' },
-    { name: 'Kenji Tanaka', years: '2 Years', date: 'Oct 16' }
-  ];
+  upcomingAnniversaries: any[] = [];
+  anniversariesLoading: boolean = true;
 
-  ngOnInit() {
+  ngOnInit(): void {
     if (this.role === 'Admin') {
       this.isAdmin = true;
       this.loadDashboardStats();
+      this.loadRecentActivity();
+      this.loadUpcomingAnniversaries();
     } else {
       this.loadUserProjects();
     }
   }
 
+  timeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + ' years ago';
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + ' months ago';
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + ' days ago';
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + ' hours ago';
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + ' minutes ago';
+    return Math.floor(seconds) + ' seconds ago';
+  }
+
+  loadRecentActivity(): void {
+    this.activitiesLoading = true;
+    this.service.getAdminRecentActivity().subscribe({
+      next: (activities: any[]) => {
+        this.recentActivities = activities.map(a => ({
+          ...a,
+          time: this.timeAgo(a.time)
+        }));
+        this.activitiesLoading = false;
+      },
+      error: () => {
+        this.activitiesLoading = false;
+      }
+    });
+  }
+
+  loadUpcomingAnniversaries(): void {
+    this.anniversariesLoading = true;
+    this.service.getAdminUpcomingAnniversaries().subscribe({
+      next: (anniversaries: any[]) => {
+        this.upcomingAnniversaries = anniversaries;
+        this.anniversariesLoading = false;
+      },
+      error: () => {
+        this.anniversariesLoading = false;
+      }
+    });
+  }
+
   loadDashboardStats(): void {
     this.statsLoading = true;
-    // Load real stats from service
+    
+    // Load employee count
     this.service.getAdminUsers({ page_size: 1 }).subscribe({
       next: (res: any) => {
         if (res.count) {
@@ -77,7 +104,18 @@ export class AdminComponent implements OnInit {
         } else {
           this.totalEmployees = res.length || 0; // fallback if count isn't there
         }
-        this.statsLoading = false;
+        
+        // Load other stats
+        this.service.getAdminDashboardStats().subscribe({
+          next: (statsRes: any) => {
+            this.timesheetsSubmitted = statsRes.timesheets_submitted || 0;
+            this.activeProjects = statsRes.active_projects || 0;
+            this.statsLoading = false;
+          },
+          error: () => {
+            this.statsLoading = false;
+          }
+        });
       },
       error: () => {
         this.totalEmployees = 0;

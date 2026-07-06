@@ -22,6 +22,7 @@ export class SignupComponent implements OnInit {
   ngOnInit(): void {
     this.signupForm = this.fb.group({
       name: [''],
+      date_of_joining: [''],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.pattern(this.passwordPattern), Validators.maxLength(12), Validators.minLength(8)],],
       confirm_password: ['', [Validators.required, Validators.pattern(this.passwordPattern), Validators.maxLength(12), Validators.minLength(8)],]
@@ -74,8 +75,8 @@ submit() {
   }
 
  
-  const { name, email, password, confirm_password } = this.signupForm.value;
-  this.service.signup({ name, email, password, confirm_password }).subscribe({
+  const { name, email, password, confirm_password, date_of_joining } = this.signupForm.value;
+  this.service.signup({ name, email, password, confirm_password, date_of_joining }).subscribe({
     next: (res) => {
       this.isLoading = false; 
       alert('Registered Successfully');

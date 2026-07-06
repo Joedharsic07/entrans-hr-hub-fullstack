@@ -39,6 +39,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     password_expires_at = models.DateTimeField(null=True, blank=True)
     password_changed_at = models.DateTimeField(null=True, blank=True)
+    date_of_joining = models.DateField(null=True, blank=True)
     objects = UserManager()
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["name"]

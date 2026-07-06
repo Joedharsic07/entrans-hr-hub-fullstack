@@ -29,6 +29,9 @@ from .views import (
     PushTimesheetEmailView,
     ProjectUserRolesView,
     ProjectUsersView,
+    AdminDashboardStatsView,
+    AdminRecentActivityView,
+    AdminUpcomingAnniversariesView,
 )
 
 urlpatterns = [
@@ -107,4 +110,7 @@ urlpatterns = [
     path("admin-users/", UserAdminView.as_view(), name="admin-users"),
     path("admin-users/<int:user_id>/", UserAdminDetailView.as_view(), name="admin-user-detail"),
     path("send-timesheet-reminders/", TimesheetReminderView.as_view(), name="send-timesheet-reminders"),
+    path("admin-dashboard-stats/", AdminDashboardStatsView.as_view(), name="admin-dashboard-stats"),
+    path("admin-recent-activity/", AdminRecentActivityView.as_view(), name="admin-recent-activity"),
+    path("admin-upcoming-anniversaries/", AdminUpcomingAnniversariesView.as_view(), name="admin-upcoming-anniversaries"),
 ]

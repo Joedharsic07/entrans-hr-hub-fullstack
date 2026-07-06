@@ -59,6 +59,7 @@ export class ProjectMembersComponent implements OnInit, OnDestroy {
   userSearch = '';
   userPage = 1;
   readonly userPageSize = 12;
+  viewMode: 'grid' | 'list' = 'grid';
 
   // Add User modal
   showAddUserModal = false;

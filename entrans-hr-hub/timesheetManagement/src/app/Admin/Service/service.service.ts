@@ -94,4 +94,15 @@ export class ServiceService {
     return this.httpClient.get(`${this.baseUrl}/ppt-automation/`);
   }
 
+  getAdminDashboardStats(): Observable<any> {
+    return this.httpClient.get(`${this.baseUrl}/admin-dashboard-stats/`);
+  }
+
+  getAdminRecentActivity(): Observable<any> {
+    return this.httpClient.get(`${this.baseUrl}/admin-recent-activity/`);
+  }
+
+  getAdminUpcomingAnniversaries(): Observable<any> {
+    return this.httpClient.get(`${this.baseUrl}/admin-upcoming-anniversaries/`);
+  }
 }

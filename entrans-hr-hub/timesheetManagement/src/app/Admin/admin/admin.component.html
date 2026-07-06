@@ -58,23 +58,37 @@
           <div class="stat-card stat-card--blue">
             <div class="stat-card-content">
               <span class="stat-card-label">TIMESHEETS SUBMITTED</span>
-              <span class="stat-card-value">{{ timesheetsSubmitted | number }}</span>
-              <span class="stat-card-meta">Target: 1,100 units</span>
+              
+              <!-- Loader -->
+              <div *ngIf="statsLoading" class="animate-pulse flex items-center h-8 mt-1 mb-1">
+                <div class="h-6 bg-slate-200 rounded w-16"></div>
+              </div>
+
+              <!-- Value -->
+              <span *ngIf="!statsLoading" class="stat-card-value">{{ timesheetsSubmitted | number }}</span>
             </div>
             <div class="stat-card-icon stat-card-icon--blue">
               <i class="bi bi-clock-history"></i>
             </div>
           </div>
-          <div class="stat-card stat-card--red">
+          <div class="stat-card stat-card--blue">
             <div class="stat-card-content">
-              <span class="stat-card-label">PENDING APPROVALS</span>
-              <span class="stat-card-value stat-value-red">{{ pendingApprovals }}</span>
-              <span class="stat-card-trend negative">
-                <i class="bi bi-exclamation-circle-fill"></i> High priority
+              <span class="stat-card-label">ACTIVE PROJECTS</span>
+              
+              <!-- Loader -->
+              <div *ngIf="statsLoading" class="animate-pulse flex items-center h-8 mt-1 mb-1">
+                <div class="h-6 bg-slate-200 rounded w-16"></div>
+              </div>
+
+              <!-- Value -->
+              <span *ngIf="!statsLoading" class="stat-card-value">{{ activeProjects }}</span>
+              
+              <span class="stat-card-trend positive">
+                <i class="bi bi-kanban"></i> Ongoing initiatives
               </span>
             </div>
-            <div class="stat-card-icon stat-card-icon--red">
-              <i class="bi bi-person-check-fill"></i>
+            <div class="stat-card-icon stat-card-icon--blue">
+              <i class="bi bi-briefcase-fill"></i>
             </div>
           </div>
         </div>
@@ -172,6 +186,17 @@
               <a class="activity-view-all">View All</a>
             </div>
             <div class="activity-list">
+              <!-- Loader for Recent Activity -->
+              <ng-container *ngIf="activitiesLoading">
+                <div class="activity-item animate-pulse" *ngFor="let i of [1,2,3,4,5]">
+                  <div class="activity-icon bg-slate-200"></div>
+                  <div class="activity-content w-full">
+                    <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                    <div class="h-3 bg-slate-200 rounded w-1/3"></div>
+                  </div>
+                </div>
+              </ng-container>
+
               <div class="activity-item" *ngFor="let activity of recentActivities">
                 <div class="activity-icon" [ngClass]="activity.iconClass">
                   <i [class]="activity.icon"></i>
@@ -212,6 +237,17 @@
             <div class="anniv-widget">
               <h3 class="anniv-widget-title">Upcoming Anniversaries</h3>
               <div class="anniv-list">
+                <!-- Loader -->
+                <ng-container *ngIf="anniversariesLoading">
+                  <div class="anniv-item animate-pulse" *ngFor="let i of [1,2,3]">
+                    <div class="anniv-avatar bg-slate-200"></div>
+                    <div class="anniv-info flex-1">
+                      <div class="h-3 bg-slate-200 rounded w-1/2 mb-1"></div>
+                      <div class="h-2 bg-slate-200 rounded w-1/3"></div>
+                    </div>
+                  </div>
+                </ng-container>
+
                 <div class="anniv-item" *ngFor="let anniv of upcomingAnniversaries">
                   <div class="anniv-avatar">
                     <i class="bi bi-person-fill"></i>
@@ -221,6 +257,10 @@
                     <span class="anniv-detail">{{ anniv.years }} • {{ anniv.date }}</span>
                   </div>
                 </div>
+
+                <div class="p-4 text-center text-slate-500 text-sm" *ngIf="!anniversariesLoading && upcomingAnniversaries?.length === 0">
+                  No upcoming anniversaries
+                </div>
               </div>
               <button class="anniv-btn" (click)="navigateToPpt()">Generate Decks</button>
             </div>
@@ -228,14 +268,7 @@
         </div>
 
         <!-- Footer -->
-        <footer class="dashboard-footer">
-          <span class="footer-copy">&copy; 2024 HR HUB ELITE EDITION. ALL RIGHTS RESERVED.</span>
-          <div class="footer-links">
-            <a class="footer-link">Privacy Policy</a>
-            <a class="footer-link">Terms of Service</a>
-            <a class="footer-link">System Status</a>
-          </div>
-        </footer>
+        <app-footer></app-footer>
       </div>
 
       <!-- Non-Admin: Project Cards -->
