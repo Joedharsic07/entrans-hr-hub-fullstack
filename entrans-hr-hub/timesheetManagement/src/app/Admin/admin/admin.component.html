@@ -58,7 +58,7 @@
           <div class="stat-card stat-card--blue">
             <div class="stat-card-content">
               <span class="stat-card-label">TIMESHEETS SUBMITTED</span>
-              
+
               <!-- Loader -->
               <div *ngIf="statsLoading" class="animate-pulse flex items-center h-8 mt-1 mb-1">
                 <div class="h-6 bg-slate-200 rounded w-16"></div>
@@ -74,7 +74,7 @@
           <div class="stat-card stat-card--blue">
             <div class="stat-card-content">
               <span class="stat-card-label">ACTIVE PROJECTS</span>
-              
+
               <!-- Loader -->
               <div *ngIf="statsLoading" class="animate-pulse flex items-center h-8 mt-1 mb-1">
                 <div class="h-6 bg-slate-200 rounded w-16"></div>
@@ -82,7 +82,7 @@
 
               <!-- Value -->
               <span *ngIf="!statsLoading" class="stat-card-value">{{ activeProjects }}</span>
-              
+
               <span class="stat-card-trend positive">
                 <i class="bi bi-kanban"></i> Ongoing initiatives
               </span>
@@ -100,7 +100,7 @@
             <!-- Row 1: Timesheet Automation (large) + 2 small cards -->
             <div class="feature-row feature-row--mixed">
               <!-- Timesheet Automation - Large -->
-              <div class="feature-card feature-card--large" (click)="showTimesheetOptions = true">
+              <div class="feature-card feature-card--large" (click)="navigateToTimesheet_upload()">
                 <div class="feature-card-icon feature-card-icon--blue-lg">
                   <i class="bi bi-gear-wide-connected"></i>
                 </div>
@@ -258,7 +258,8 @@
                   </div>
                 </div>
 
-                <div class="p-4 text-center text-slate-500 text-sm" *ngIf="!anniversariesLoading && upcomingAnniversaries?.length === 0">
+                <div class="p-4 text-center text-slate-500 text-sm"
+                  *ngIf="!anniversariesLoading && upcomingAnniversaries?.length === 0">
                   No upcoming anniversaries
                 </div>
               </div>

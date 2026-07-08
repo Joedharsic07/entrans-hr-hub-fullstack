@@ -115,7 +115,7 @@
               <div class="max-w-2xl">
                 <h1 class="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight mb-4">{{ selectedProject.project_name }}</h1>
                 <p class="text-slate-600 text-[15px] leading-relaxed font-medium">
-                  A high-priority modernization initiative focusing on the core enterprise resource planning systems across 14 international regions.
+                  {{ usersData?.project_description || 'No description available for this project.' }}
                 </p>
               </div>
               
@@ -141,8 +141,8 @@
               <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 flex flex-col justify-between min-h-[7rem]">
                 <p class="text-[13px] font-bold text-slate-500 mb-1">Total Hours</p>
                 <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <span class="text-2xl sm:text-3xl font-extrabold text-slate-900">1,482</span>
-                  <span class="text-xs sm:text-sm font-bold text-slate-400">MTD</span>
+                  <div *ngIf="usersLoading" class="h-8 w-16 sm:w-24 bg-slate-200 animate-pulse rounded-md mt-1"></div>
+                  <span *ngIf="!usersLoading" class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{usersData?.total_duration !== undefined ? usersData?.total_duration : '0'}}</span>
                 </div>
               </div>
               
@@ -180,16 +180,17 @@
               <!-- GRID VIEW -->
               <div *ngIf="viewMode === 'grid'" class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
                 <div *ngFor="let u of usersData.users; let i = index" class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 flex flex-col hover:shadow-md transition-shadow">
-                  <div class="flex justify-between items-start mb-5">
-                    <div class="flex gap-4">
+                  <div class="flex justify-between items-start mb-5 gap-3">
+                    <div class="flex gap-3 min-w-0 flex-1">
                       <div class="w-12 h-12 rounded-full flex items-center justify-center font-extrabold text-lg text-white shrink-0 overflow-hidden"
                            [ngClass]="i % 4 === 0 ? 'bg-indigo-600' : (i % 4 === 1 ? 'bg-orange-500' : (i % 4 === 2 ? 'bg-emerald-600' : 'bg-slate-700'))">
                         <img *ngIf="i % 3 === 0" src="https://ui-avatars.com/api/?name={{u.user_name}}&background=random" class="w-full h-full object-cover opacity-80 mix-blend-screen" />
                         <span *ngIf="i % 3 !== 0">{{ u.user_name.charAt(0).toUpperCase() }}</span>
                       </div>
-                      <div>
-                        <h4 class="font-bold text-slate-900 text-[15px] leading-tight mb-1">{{ u.user_name }}</h4>
-                        <p class="text-xs text-slate-500 font-medium">{{ u.designation || 'Team Member' }}</p>
+                      <div class="min-w-0 flex-1">
+                        <h4 class="font-bold text-slate-900 text-[15px] leading-tight mb-1 truncate" title="{{ u.user_name }}">{{ u.user_name }}</h4>
+                        <p class="text-xs text-slate-500 font-medium truncate" title="{{ u.designation || 'Team Member' }}">{{ u.designation || 'Team Member' }}</p>
+                        <p class="text-xs text-slate-500 font-medium truncate" title="{{u.email || ''}}">{{u.email ||""}}</p>
                       </div>
                     </div>
                     <button class="text-slate-400 hover:text-slate-700 transition-colors p-1"><i class="bi bi-three-dots-vertical"></i></button>
@@ -204,10 +205,6 @@
                   </div> -->
 
                   <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <div>
-                      <p class="text-[9px] font-black text-slate-400 mb-0.5 tracking-wider">WEEKLY COMMITMENT</p>
-                      <p class="text-[13px] font-bold text-slate-900">40 Hours / 100%</p>
-                    </div>
                     <button (click)="viewUserTimesheet(u)" class="text-[#0a4cc4] hover:text-[#083e9e] text-[13px] font-bold flex items-center gap-1 transition-colors group">
                       View Timesheet <i class="bi bi-chevron-right text-[11px] group-hover:translate-x-0.5 transition-transform"></i>
                     </button>

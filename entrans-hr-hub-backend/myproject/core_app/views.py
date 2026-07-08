@@ -2343,9 +2343,9 @@ class ProjectUsersView(APIView):
             return Response(
                 {"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN
             )
-
         try:
             project = Project.objects.get(id=project_id)
+            project_description = project.description
         except Project.DoesNotExist:
             return Response(
                 {"error": "Project not found."}, status=status.HTTP_404_NOT_FOUND
@@ -2387,10 +2387,16 @@ class ProjectUsersView(APIView):
             for up in assignments
         ]
 
+        from django.db.models import Sum
+        total_duration_agg = Timesheet.objects.filter(user_project__project=project).aggregate(total=Sum('duration'))
+        total_duration = total_duration_agg['total'] or 0
+
         return Response(
             {
                 "project_id": project.id,
                 "project_name": project.name,
+                "project_description": project_description,
+                "total_duration": float(total_duration),
                 "count": total_count,
                 "total_pages": total_pages,
                 "current_page": page,
@@ -2818,7 +2824,12 @@ class AdminDashboardStatsView(APIView):
         if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
             return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
         
-        total_timesheets = Timesheet.objects.count()
+        from django.db.models.functions import ExtractMonth, ExtractYear
+        total_timesheets = Timesheet.objects.annotate(
+            year=ExtractYear('date'),
+            month=ExtractMonth('date')
+        ).values('user_project__user', 'year', 'month').distinct().count()
+        
         active_projects = Project.objects.count()
         return Response({
             "timesheets_submitted": total_timesheets,
@@ -2891,7 +2902,6 @@ class AdminRecentActivityView(APIView):
 class AdminUpcomingAnniversariesView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
-        from .utils.auth import get_user_from_request
         requesting_user = get_user_from_request(request)
         if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
             return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
