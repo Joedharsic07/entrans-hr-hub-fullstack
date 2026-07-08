@@ -1,27 +1,57 @@
 <div class="h-screen flex flex-col font-sans antialiased text-slate-800">
-  <header *ngIf="shouldShowNavbar()"
-    class="fixed top-0 left-0 w-full flex items-center justify-between px-6 py-2 bg-white h-16 z-50 shadow-sm border-b border-gray-200">
-    <div class="flex items-center gap-4">
-      <button class="md:hidden p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg focus:outline-none transition-colors" (click)="toggleMobileSidebar()">
+
+  <!-- ===== Top Navigation Bar ===== -->
+  <header *ngIf="shouldShowNavbar()" class="app-header">
+    <!-- Left Section: Logo + Brand + Nav Tabs + Search -->
+    <div class="header-left">
+      <button class="md:hidden header-mobile-btn" (click)="toggleMobileSidebar()">
         <i class="bi bi-list text-2xl leading-none"></i>
       </button>
-      <img src="/assets/svg/Rectangle 90.svg" alt="Entrans Logo" class="h-[36px] w-auto">
-      <div class="h-6 w-px bg-slate-200 hidden md:block"></div>
-      <span class="text-slate-600 font-semibold text-sm hidden md:block tracking-wide uppercase">HR Hub Elite</span>
+
+      <!-- Logo -->
+      <img src="/assets/svg/Rectangle 90.svg" alt="Entrans Logo" class="header-logo">
+
+      <!-- Brand -->
+      <span class="header-brand">HR HUB ELITE</span>
+
+      <!-- Nav Tabs -->
+      <nav class="header-nav">
+        <a routerLink="/admin" routerLinkActive="header-nav-link--active" [routerLinkActiveOptions]="{exact: true}"
+          class="header-nav-link">Dashboard</a>
+        <a routerLink="/validation-timesheet" routerLinkActive="header-nav-link--active"
+          class="header-nav-link">Reports</a>
+        <a class="header-nav-link">Settings</a>
+      </nav>
+
+      <!-- Search -->
+      <div class="header-search">
+        <i class="bi bi-search header-search-icon"></i>
+        <input type="text" placeholder="Search..." class="header-search-input" />
+      </div>
     </div>
 
-    <div class="flex items-center gap-3">
-      <div class="profile hidden sm:flex flex-col text-end border-r border-slate-200 pr-4 me-1">
-        <span class="username text-sm font-bold text-slate-700">{{ userName }}</span>
-        <span class="role text-[10px] font-bold text-slate-400 uppercase tracking-widest">{{ userRole }}</span>
+    <!-- Right Section: Notification + User + Logout -->
+    <div class="header-right">
+      <!-- Notification Bell -->
+      <button class="header-icon-btn">
+        <i class="bi bi-bell"></i>
+      </button>
+
+      <!-- User Info -->
+      <div class="header-user">
+        <div class="header-user-avatar">
+          {{ userName ? userName.charAt(0).toUpperCase() : 'A' }}
+        </div>
+        <div class="header-user-info">
+          <span class="header-user-name">{{ userName }}</span>
+          <span class="header-user-role">{{ userRole }}</span>
+        </div>
       </div>
 
-      <!-- Settings icon with dropdown -->
+      <!-- Settings -->
       <div class="relative" (click)="$event.stopPropagation()">
-        <button
-          class="w-9 h-9 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-primary transition-all focus:outline-none"
-          (click)="toggleSettings()">
-          <i class="bi bi-gear text-base"></i>
+        <button class="header-icon-btn" (click)="toggleSettings()">
+          <i class="bi bi-gear"></i>
         </button>
         <div *ngIf="showSettingsDropdown"
           class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden z-50">
@@ -32,23 +62,24 @@
           </button>
         </div>
       </div>
-      <button
-        class="bg-slate-50 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-200 hover:border-red-200 py-1.5 px-3.5 rounded-lg flex items-center whitespace-nowrap transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-red-100"
-        (click)="logout()">
-        <i class="bi bi-box-arrow-right text-sm mr-2"></i>
-        <span class="hidden sm:inline text-sm font-bold">Logout</span>
+
+      <!-- Logout -->
+      <button class="header-logout-btn" (click)="logout()">
+        Logout
       </button>
     </div>
   </header>
 
+  <!-- ===== Main Content ===== -->
   <main
     [ngClass]="shouldShowNavbar() ? 'flex-1 overflow-auto bg-slate-50 pt-16 min-h-[calc(100vh-4rem)]' : 'flex-1 overflow-auto bg-slate-50 min-h-screen'">
     <router-outlet></router-outlet>
   </main>
 
-  <!-- Mobile Sidebar Overlay (Only on small screens) -->
+  <!-- ===== Mobile Sidebar Overlay ===== -->
   <div *ngIf="showMobileSidebar" class="md:hidden fixed inset-0 z-[100] flex">
-    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" (click)="toggleMobileSidebar()"></div>
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" (click)="toggleMobileSidebar()">
+    </div>
     <div class="relative w-72 bg-white h-full shadow-2xl transform transition-transform anim-slide-right flex-shrink-0">
       <app-sidebar></app-sidebar>
     </div>
@@ -91,8 +122,8 @@
         <div>
           <label class="block text-sm font-semibold text-slate-700 mb-1.5">Current Password</label>
           <div class="relative">
-            <input [(ngModel)]="cpForm.old_password" name="old_password"
-              [type]="showOldPwd ? 'text' : 'password'" placeholder="Enter current password"
+            <input [(ngModel)]="cpForm.old_password" name="old_password" [type]="showOldPwd ? 'text' : 'password'"
+              placeholder="Enter current password"
               class="w-full px-4 py-2.5 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm" />
             <button type="button" (click)="showOldPwd = !showOldPwd"
               class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-700 hover:text-slate-900 focus:outline-none">
@@ -103,8 +134,8 @@
         <div>
           <label class="block text-sm font-semibold text-slate-700 mb-1.5">New Password</label>
           <div class="relative">
-            <input [(ngModel)]="cpForm.new_password" name="new_password"
-              [type]="showNewPwd ? 'text' : 'password'" placeholder="Minimum 8 characters"
+            <input [(ngModel)]="cpForm.new_password" name="new_password" [type]="showNewPwd ? 'text' : 'password'"
+              placeholder="Minimum 8 characters"
               class="w-full px-4 py-2.5 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm" />
             <button type="button" (click)="showNewPwd = !showNewPwd"
               class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-700 hover:text-slate-900 focus:outline-none">
@@ -127,10 +158,11 @@
         <div class="flex gap-3 pt-1">
           <button type="button" (click)="closeChangePassword()"
             class="flex-1 py-2.5 rounded-xl font-semibold text-sm hover:bg-slate-100 transition-colors focus:outline-none"
-            style="border: 1.5px solid #000; color: #000; background: #fff;">Cancel</button>
+            style="border: 1.5px solid #e2e8f0; color: #334155; background: #fff;">Cancel</button>
           <button type="submit" [disabled]="cpLoading"
             class="flex-1 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
-            <span *ngIf="cpLoading" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span *ngIf="cpLoading"
+              class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             <span>{{ cpLoading ? 'Saving...' : 'Change Password' }}</span>
           </button>
         </div>

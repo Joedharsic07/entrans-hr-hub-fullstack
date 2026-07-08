@@ -13,7 +13,14 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny
 from core_app.auth import EmailAuthBackend
 from .jwt_utils import get_user_from_token, verify_token, generate_token
-from .models import TimesheetEmailLog, User, Timesheet, Project, UserProject
+from .models import (
+    TimesheetEmailLog,
+    User,
+    Timesheet,
+    Project,
+    UserProject,
+    UserAccessLog,
+)
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 from django.contrib.auth import get_user_model, authenticate
@@ -23,22 +30,22 @@ import calendar
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated
 from .models import AutomationTimesheet, TimesheetType
-from .utils.json_utils import convert_decimals,normalize_dict
+from .utils.json_utils import convert_decimals, normalize_dict
 from django.db.models import Max
 from django.utils.dateparse import parse_date
 from django.utils.timezone import is_naive, make_aware, get_current_timezone
 from .serializers import (
-    UserSerializer, 
+    UserSerializer,
     RegisterSerializer,
-    LoginSerializer, 
+    LoginSerializer,
     TimesheetSerializer,
     ProjectSerializer,
     UserProjectSerializer,
     MyTokenObtainPairSerializer,
-    UploadExcelSerializer, 
+    UploadExcelSerializer,
     UploadTimesheetSerializer,
     GenerateTemplateSerializer,
-    EmailSerializer
+    EmailSerializer,
 )
 import jwt
 import base64
@@ -55,76 +62,80 @@ from django.utils.timezone import now
 
 logger = logging.getLogger(__name__)
 
+
 def debug_token(token_str):
     """Inspect and debug a JWT token without validation"""
     try:
-        parts = token_str.split('.')
+        parts = token_str.split(".")
         if len(parts) != 3:
             return {"error": "Not a valid JWT format (should have 3 parts)"}
+
         def decode_part(part):
-            padding = '=' * (4 - len(part) % 4)
-            return json.loads(base64.b64decode(part + padding).decode('utf-8'))
-            
+            padding = "=" * (4 - len(part) % 4)
+            return json.loads(base64.b64decode(part + padding).decode("utf-8"))
+
         header = decode_part(parts[0])
         payload = decode_part(parts[1])
-        
-        return {
-            "header": header,
-            "payload": payload,
-            "is_valid_format": True
-        }
+
+        return {"header": header, "payload": payload, "is_valid_format": True}
     except Exception as e:
         logger.error(f"Token debug failed: {str(e)}")
         return {"error": f"Failed to decode token: {str(e)}"}
 
+
 def get_user_from_request(request):
     """Extract and return the user from the Authorization token"""
-    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-    
-    if not auth_header or not auth_header.startswith('Bearer '):
+    auth_header = request.META.get("HTTP_AUTHORIZATION", "")
+
+    if not auth_header or not auth_header.startswith("Bearer "):
         return None
 
-    token = auth_header.split(' ')[1]
+    token = auth_header.split(" ")[1]
 
     try:
         try:
             payload = jwt.decode(
                 token,
-                settings.SIMPLE_JWT['SIGNING_KEY'],
-                algorithms=['HS256'],
-                options={'verify_exp': True}
+                settings.SIMPLE_JWT["SIGNING_KEY"],
+                algorithms=["HS256"],
+                options={"verify_exp": True},
             )
-            user_id = payload.get('sub') or payload.get('user_id')
+            user_id = payload.get("sub") or payload.get("user_id")
             if not user_id:
                 return None
             User = get_user_model()
             return User.objects.get(id=user_id)
-            
+
         except Exception:
             user = get_user_from_token(token)
             return user
-            
+
     except Exception:
         try:
             User = get_user_model()
             token_obj = AccessToken(token)
-            user_id = token_obj.payload.get('user_id')
+            user_id = token_obj.payload.get("user_id")
             if user_id:
                 return User.objects.get(id=user_id)
         except Exception:
             return None
+
+
 def generate_password_reset_token(user_id):
     payload = {
         "user_id": user_id,
         "type": "password_reset",
         "exp": datetime.utcnow() + timedelta(hours=1),
-        "iat": datetime.utcnow()
+        "iat": datetime.utcnow(),
     }
-    return jwt.encode(payload, settings.SIMPLE_JWT['SIGNING_KEY'], algorithm='HS256')
+    return jwt.encode(payload, settings.SIMPLE_JWT["SIGNING_KEY"], algorithm="HS256")
+
 
 def verify_password_reset_token(token):
     try:
-        payload = jwt.decode(token, settings.SIMPLE_JWT['SIGNING_KEY'], algorithms=['HS256'])
+        payload = jwt.decode(
+            token, settings.SIMPLE_JWT["SIGNING_KEY"], algorithms=["HS256"]
+        )
         if payload.get("type") != "password_reset":
             raise jwt.InvalidTokenError("Incorrect token type")
         return payload["user_id"]
@@ -133,183 +144,354 @@ def verify_password_reset_token(token):
         raise ValueError("Invalid or expired token")
 
 
+def _get_client_ip(request):
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        return x_forwarded_for.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR")
+
+
+def _parse_user_agent(ua_string: str) -> str:
+    if not ua_string:
+        return "Unknown device"
+    ua = ua_string.lower()
+    if "chrome" in ua and "edg" not in ua and "opr" not in ua:
+        browser = "Chrome"
+    elif "firefox" in ua:
+        browser = "Firefox"
+    elif "safari" in ua and "chrome" not in ua:
+        browser = "Safari"
+    elif "edg" in ua:
+        browser = "Edge"
+    elif "opr" in ua or "opera" in ua:
+        browser = "Opera"
+    else:
+        browser = "Browser"
+    if "windows" in ua:
+        os_name = "Windows"
+    elif "macintosh" in ua or "mac os" in ua:
+        os_name = "macOS"
+    elif "android" in ua:
+        os_name = "Android"
+    elif "iphone" in ua or "ipad" in ua:
+        os_name = "iOS"
+    elif "linux" in ua:
+        os_name = "Linux"
+    else:
+        os_name = "Unknown OS"
+    return f"{browser} on {os_name}"
+
+
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
-#Users Api
+
+# Users Api
 class UserListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         User = get_user_model()
-        users = User.objects.all().values('id', 'name', 'email')
+        users = User.objects.all().values("id", "name", "email")
         return Response(users)
 
-#Register API
+
+# Current authenticated user profile
+class MeView(APIView):
+    def get(self, request):
+        user = get_user_from_request(request)
+        if not user:
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        serializer = UserSerializer(user)
+        data = dict(serializer.data)
+
+        user_projects = UserProject.objects.filter(user=user).select_related("project")
+        data["projects"] = [
+            {
+                "user_project_id": up.id,
+                "project_id": up.project.id,
+                "project_name": up.project.name,
+                "role": up.role,
+            }
+            for up in user_projects
+        ]
+        data["projects_count"] = len(data["projects"])
+
+        return Response(data)
+
+    def put(self, request):
+        user = get_user_from_request(request)
+        if not user:
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        first_name = request.data.get("first_name", user.first_name)
+        last_name = request.data.get("last_name", user.last_name)
+        designation = request.data.get("designation", user.designation)
+
+        user.first_name = first_name
+        user.last_name = last_name
+        user.name = f"{first_name} {last_name}".strip()
+        if designation is not None:
+            user.designation = designation
+            
+        user.save()
+
+        serializer = UserSerializer(user)
+        return Response({
+            "status": "success",
+            "message": "Profile updated successfully.",
+            "user": serializer.data
+        })
+
+
+# Register API
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
-        
+
         if not serializer.is_valid():
-            return Response({
-                "status": "error",
-                "code": "invalid_input",
-                "errors": serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    "status": "error",
+                    "code": "invalid_input",
+                    "errors": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             user = serializer.save()
 
-            return Response({
-                "status": "success",
-                "message": "User registered successfully. Please log in to continue.",
-                "user": UserSerializer(user).data
-            }, status=status.HTTP_201_CREATED)
+            return Response(
+                {
+                    "status": "success",
+                    "message": "User registered successfully. Please log in to continue.",
+                    "user": UserSerializer(user).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
 
         except Exception as e:
             logger.error(f"Registration error: {str(e)}")
-            return Response({
-                "status": "error",
-                "code": "server_error",
-                "message": "Internal server error during registration"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {
+                    "status": "error",
+                    "code": "server_error",
+                    "message": "Internal server error during registration",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
-#Login API
+
+# Login API
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
-        
+
         if not serializer.is_valid():
-            return Response({
-                "status": "error",
-                "code": "invalid_input",
-                "errors": serializer.errors
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    "status": "error",
+                    "code": "invalid_input",
+                    "errors": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
-            email = serializer.validated_data['email']
-            password = serializer.validated_data['password']
-            
+            email = serializer.validated_data["email"]
+            password = serializer.validated_data["password"]
+
             user = authenticate(
                 request,
                 email=email,
                 password=password,
-                backend='core_app.auth.EmailAuthBackend'
+                backend="core_app.auth.EmailAuthBackend",
             )
-            
+
             if user is None:
                 User = get_user_model()
                 try:
                     db_user = User.objects.get(email=email)
                     if not db_user.is_active:
-                        return Response({
-                            "status": "error",
-                            "code": "account_inactive",
-                            "message": "Account is inactive"
-                        }, status=status.HTTP_403_FORBIDDEN)
-                        
-                    return Response({
-                        "status": "error",
-                        "code": "invalid_credentials",
-                        "message": "Invalid password"
-                    }, status=status.HTTP_401_UNAUTHORIZED)
-                    
-                except User.DoesNotExist:
-                    return Response({
-                        "status": "error",
-                        "code": "user_not_found",
-                        "message": "No user with this email exists"
-                    }, status=status.HTTP_404_NOT_FOUND)
+                        return Response(
+                            {
+                                "status": "error",
+                                "code": "account_inactive",
+                                "message": "Account is inactive",
+                            },
+                            status=status.HTTP_403_FORBIDDEN,
+                        )
 
-            access_token = generate_token(user, 'access')
-            refresh_token = generate_token(user, 'refresh')
+                    try:
+                        UserAccessLog.objects.create(
+                            user=db_user,
+                            action="login",
+                            status="failed",
+                            ip_address=_get_client_ip(request),
+                            user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
+                        )
+                    except Exception:
+                        pass
+
+                    return Response(
+                        {
+                            "status": "error",
+                            "code": "invalid_credentials",
+                            "message": "Invalid password",
+                        },
+                        status=status.HTTP_401_UNAUTHORIZED,
+                    )
+
+                except User.DoesNotExist:
+                    return Response(
+                        {
+                            "status": "error",
+                            "code": "user_not_found",
+                            "message": "No user with this email exists",
+                        },
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+
+            access_token = generate_token(user, "access")
+            refresh_token = generate_token(user, "refresh")
 
             # Check if temporary password has expired
             if user.password_expires_at and user.password_expires_at < now():
-                return Response({
-                    "status": "error",
-                    "code": "password_expired",
-                    "message": "Your temporary password has expired. Please contact your administrator."
-                }, status=status.HTTP_401_UNAUTHORIZED)
+                return Response(
+                    {
+                        "status": "error",
+                        "code": "password_expired",
+                        "message": "Your temporary password has expired. Please contact your administrator.",
+                    },
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
 
-            return Response({
-                "status": "success",
-                "user": UserSerializer(user).data,
-                "access_token": access_token,
-                "refresh_token": refresh_token
-            })
-                
+            try:
+                UserAccessLog.objects.create(
+                    user=user,
+                    action="login",
+                    status="success",
+                    ip_address=_get_client_ip(request),
+                    user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
+                )
+            except Exception:
+                pass
+
+            return Response(
+                {
+                    "status": "success",
+                    "user": UserSerializer(user).data,
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                }
+            )
+
         except Exception as e:
             logger.error(f"Login error: {str(e)}")
-            return Response({
-                "status": "error",
-                "code": "server_error",
-                "message": "Internal server error"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {
+                    "status": "error",
+                    "code": "server_error",
+                    "message": "Internal server error",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
 
 class RefreshTokenView(APIView):
     permission_classes = [AllowAny]
-    
+
     def post(self, request):
-        refresh_token = request.data.get('refresh_token')
-        
+        refresh_token = request.data.get("refresh_token")
+
         if not refresh_token:
-            return Response({'error': 'Refresh token is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(
+                {"error": "Refresh token is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
             try:
                 payload = verify_token(refresh_token)
-                
-                if payload.get('type') != 'refresh':
-                    return Response({'error': 'Invalid token type - not a refresh token'}, 
-                                    status=status.HTTP_400_BAD_REQUEST)
-                
-                user_id = payload.get('sub', payload.get('user_id'))
+
+                if payload.get("type") != "refresh":
+                    return Response(
+                        {"error": "Invalid token type - not a refresh token"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                user_id = payload.get("sub", payload.get("user_id"))
                 if not user_id:
-                    return Response({'error': 'Invalid token - no user ID'}, 
-                                    status=status.HTTP_400_BAD_REQUEST)
-                    
-                access_token = generate_token(user_id, 'access')
-                return Response({'access_token': access_token})
-                
+                    return Response(
+                        {"error": "Invalid token - no user ID"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                access_token = generate_token(user_id, "access")
+                return Response({"access_token": access_token})
+
             except Exception as custom_error:
                 from rest_framework_simplejwt.tokens import RefreshToken
+
                 try:
                     refresh = RefreshToken(refresh_token)
-                    return Response({
-                        'access_token': str(refresh.access_token),
-                    })
+                    return Response(
+                        {
+                            "access_token": str(refresh.access_token),
+                        }
+                    )
                 except Exception:
                     raise custom_error
-                
+
         except Exception as e:
             logger.error(f"Refresh token error: {str(e)}")
-            return Response({'error': 'Invalid refresh token'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
 
 # Project API Views
 class ProjectListCreateView(APIView):
     """List all projects the user is involved in, or create a new project."""
+
     def get(self, request, user_id=None):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
-        target_user = user  
+        target_user = user
         if user_id:
             try:
                 target_user = User.objects.get(id=user_id)
             except User.DoesNotExist:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+                )
 
             if not (user.is_staff or user.id == target_user.id):
-                return Response({"error": "You don't have permission to view this user's projects"},
-                                status=status.HTTP_403_FORBIDDEN)
+                return Response(
+                    {"error": "You don't have permission to view this user's projects"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
 
-        user_projects = UserProject.objects.filter(user=target_user).select_related('project')
+        user_projects = UserProject.objects.filter(user=target_user).select_related(
+            "project"
+        )
         user_project_map = {up.project_id: up for up in user_projects}
         projects = [up.project for up in user_projects]
 
@@ -317,8 +499,8 @@ class ProjectListCreateView(APIView):
         for project in projects:
             project_data = ProjectSerializer(project).data
             user_project = user_project_map.get(project.id)
-            project_data['user_project_id'] = user_project.id if user_project else None
-            project_data['role'] = user_project.role if user_project else None
+            project_data["user_project_id"] = user_project.id if user_project else None
+            project_data["role"] = user_project.role if user_project else None
             response_data.append(project_data)
 
         return Response(response_data)
@@ -360,57 +542,76 @@ class ProjectListCreateView(APIView):
     #         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     def post(self, request):
         user = get_user_from_request(request)
         if not user or not user.is_staff:
-            return Response({"error": "Only admin can create or modify projects"}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "Only admin can create or modify projects"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         data = request.data.copy()
-        user_projects_data = data.pop('user_projects', [])
-        owner_id = data.get('owner')
-        project_name = data.get('name')
+        user_projects_data = data.pop("user_projects", [])
+        owner_id = data.get("owner")
+        project_name = data.get("name")
 
         if not owner_id:
-            return Response({"error": "Missing 'owner' field"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Missing 'owner' field"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
             owner = User.objects.get(id=owner_id)
         except User.DoesNotExist:
-            return Response({"error": "Owner not found"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Owner not found"}, status=status.HTTP_400_BAD_REQUEST
+            )
         existing_project = Project.objects.filter(name=project_name).first()
 
         if existing_project:
             added_users = []
             for entry in user_projects_data:
                 try:
-                    target_user = User.objects.get(id=entry['user'])
-                    role = entry.get('role', 'collaborator')
-                    if role in ['owner', 'collaborator']:
-                        if not UserProject.objects.filter(user=target_user, project=existing_project).exists():
-                            UserProject.objects.create(user=target_user, project=existing_project, role=role)
+                    target_user = User.objects.get(id=entry["user"])
+                    role = entry.get("role", "collaborator")
+                    if role in ["owner", "collaborator"]:
+                        if not UserProject.objects.filter(
+                            user=target_user, project=existing_project
+                        ).exists():
+                            UserProject.objects.create(
+                                user=target_user, project=existing_project, role=role
+                            )
                             added_users.append(target_user.id)
                 except User.DoesNotExist:
                     continue
 
-            return Response({
-                "message": f"Users added to existing project '{existing_project.name}'",
-                "project_id": existing_project.id,
-                "added_user_ids": added_users
-            }, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "message": f"Users added to existing project '{existing_project.name}'",
+                    "project_id": existing_project.id,
+                    "added_user_ids": added_users,
+                },
+                status=status.HTTP_200_OK,
+            )
         serializer = ProjectSerializer(data=data)
         if serializer.is_valid():
             with transaction.atomic():
                 project = serializer.save(owner=owner)
-                UserProject.objects.create(user=owner, project=project, role='owner')
+                UserProject.objects.create(user=owner, project=project, role="owner")
                 assigned_user_ids = {owner.id}
 
                 for entry in user_projects_data:
                     try:
-                        target_user = User.objects.get(id=entry['user'])
-                        role = entry.get('role', 'collaborator')
-                        if role in ['owner', 'collaborator'] and target_user.id not in assigned_user_ids:
-                            UserProject.objects.create(user=target_user, project=project, role=role)
+                        target_user = User.objects.get(id=entry["user"])
+                        role = entry.get("role", "collaborator")
+                        if (
+                            role in ["owner", "collaborator"]
+                            and target_user.id not in assigned_user_ids
+                        ):
+                            UserProject.objects.create(
+                                user=target_user, project=project, role=role
+                            )
                             assigned_user_ids.add(target_user.id)
                     except User.DoesNotExist:
                         continue
@@ -419,60 +620,85 @@ class ProjectListCreateView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-#projects API
+
+# projects API
 class ProjectDetailView(APIView):
     """Retrieve, update, or delete a project instance"""
+
     def get_object(self, pk, user):
         try:
             project = Project.objects.get(pk=pk)
-            if project.owner == user or UserProject.objects.filter(user=user, project=project).exists():
+            if (
+                project.owner == user
+                or UserProject.objects.filter(user=user, project=project).exists()
+            ):
                 return project
             return None
         except Project.DoesNotExist:
             return None
-    
+
     def get(self, request, pk):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         project = self.get_object(pk, user)
         if not project:
-            return Response({"error": "Project not found or access denied"}, 
-                           status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Project not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         return Response(ProjectSerializer(project).data)
-    
+
     def patch(self, request, pk):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         project = self.get_object(pk, user)
         if not project:
-            return Response({"error": "Project not found or access denied"}, 
-                           status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Project not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         if project.owner != user:
-            return Response({"error": "Only the project owner can update project details"}, 
-                           status=status.HTTP_403_FORBIDDEN)
-            
+            return Response(
+                {"error": "Only the project owner can update project details"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = ProjectSerializer(project, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     def delete(self, request, pk):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         project = self.get_object(pk, user)
         if not project:
-            return Response({"error": "Project not found or access denied"}, 
-                           status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Project not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         if project.owner != user:
-            return Response({"error": "Only the project owner can delete the project"}, 
-                           status=status.HTTP_403_FORBIDDEN)
-            
+            return Response(
+                {"error": "Only the project owner can delete the project"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         project.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 # UserProject API Views
 class UserProjectListCreateView(APIView):
@@ -481,11 +707,16 @@ class UserProjectListCreateView(APIView):
     def get(self, request):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
-        project_id = request.query_params.get('project_id')
-        user_id = request.query_params.get('user_id')
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        project_id = request.query_params.get("project_id")
+        user_id = request.query_params.get("user_id")
         owned_projects = Project.objects.filter(owner=user)
-        queryset = UserProject.objects.filter(user=user) | UserProject.objects.filter(project__in=owned_projects)
+        queryset = UserProject.objects.filter(user=user) | UserProject.objects.filter(
+            project__in=owned_projects
+        )
         if project_id:
             queryset = queryset.filter(project_id=project_id)
         if user_id:
@@ -497,25 +728,34 @@ class UserProjectListCreateView(APIView):
     def post(self, request):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
-        project_id = request.data.get('project')
-        target_user_id = request.data.get('user')
+        project_id = request.data.get("project")
+        target_user_id = request.data.get("user")
 
         try:
             project = Project.objects.get(id=project_id)
         except Project.DoesNotExist:
-            return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         # Only the project owner or a staff/superuser admin can add members
         if not (user.is_staff or user.is_superuser) and project.owner != user:
             return Response(
-                {"error": "Only the project owner or an admin can add users to this project"},
+                {
+                    "error": "Only the project owner or an admin can add users to this project"
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
 
         # Prevent duplicate assignments
-        if UserProject.objects.filter(user_id=target_user_id, project_id=project_id).exists():
+        if UserProject.objects.filter(
+            user_id=target_user_id, project_id=project_id
+        ).exists():
             return Response(
                 {"error": "This user is already assigned to this project"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -526,6 +766,7 @@ class UserProjectListCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class UserProjectDetailView(APIView):
     """Retrieve, update, or delete a user-project assignment"""
@@ -538,66 +779,99 @@ class UserProjectDetailView(APIView):
             return None
         except UserProject.DoesNotExist:
             return None
-    
+
     def get(self, request, pk):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         user_project = self.get_object(pk, user)
         if not user_project:
-            return Response({"error": "User-Project assignment not found or access denied"}, 
-                           status=status.HTTP_404_NOT_FOUND)
-        
+            return Response(
+                {"error": "User-Project assignment not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         return Response(UserProjectSerializer(user_project).data)
-    
+
     def patch(self, request, pk):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         user_project = self.get_object(pk, user)
         if not user_project:
-            return Response({"error": "User-Project assignment not found or access denied"}, 
-                           status=status.HTTP_404_NOT_FOUND)
-        
+            return Response(
+                {"error": "User-Project assignment not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
         if user_project.project.owner != user:
-            return Response({"error": "Only the project owner can modify project assignments"}, 
-                           status=status.HTTP_403_FORBIDDEN)
-        
-        if 'project' in request.data and request.data['project'] != user_project.project.id:
-            return Response({"error": "Cannot change project association for an existing assignment"},
-                          status=status.HTTP_400_BAD_REQUEST)
-        
-        serializer = UserProjectSerializer(user_project, data=request.data, partial=True)
+            return Response(
+                {"error": "Only the project owner can modify project assignments"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if (
+            "project" in request.data
+            and request.data["project"] != user_project.project.id
+        ):
+            return Response(
+                {
+                    "error": "Cannot change project association for an existing assignment"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = UserProjectSerializer(
+            user_project, data=request.data, partial=True
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     def delete(self, request, pk):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         user_project = self.get_object(pk, user)
         if not user_project:
-            return Response({"error": "User-Project assignment not found or access denied"}, 
-                           status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "User-Project assignment not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         if user_project.project.owner != user:
-            return Response({"error": "Only the project owner can remove users from the project"}, 
-                           status=status.HTTP_403_FORBIDDEN)
-            
+            return Response(
+                {"error": "Only the project owner can remove users from the project"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         user_project.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-#Timesheet API
+
+# Timesheet API
 class TimesheetListCreateView(APIView):
     """List all timesheets or create a new timesheet"""
+
     def get(self, request):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         if user.is_staff or user.is_superuser:
             timesheets = Timesheet.objects.all()
@@ -605,16 +879,16 @@ class TimesheetListCreateView(APIView):
             user_projects = UserProject.objects.filter(user=user)
             timesheets = Timesheet.objects.filter(user_project__in=user_projects)
 
-        month_year = request.query_params.get('month_year')
-        month = request.query_params.get('month')
-        year = request.query_params.get('year')
-        work_type = request.query_params.get('work_type')
-        user_project_id = request.query_params.get('user_project')
-        project_id = request.query_params.get('project_id') 
+        month_year = request.query_params.get("month_year")
+        month = request.query_params.get("month")
+        year = request.query_params.get("year")
+        work_type = request.query_params.get("work_type")
+        user_project_id = request.query_params.get("user_project")
+        project_id = request.query_params.get("project_id")
 
         if month_year:
             try:
-                month, year = map(int, month_year.split('/'))
+                month, year = map(int, month_year.split("/"))
                 timesheets = timesheets.filter(date__month=month, date__year=year)
             except (ValueError, AttributeError):
                 pass
@@ -636,25 +910,31 @@ class TimesheetListCreateView(APIView):
         serializer = TimesheetSerializer(timesheets, many=True)
         raw_data = serializer.data
 
-        total_duration = timesheets.aggregate(total=Sum('duration'))['total'] or 0
-        leave_days = timesheets.annotate(
-            leave_day_value=Case(
-                When(work_type='full_day_leave', then=Value(1.0)),
-                When(work_type='half_day_leave', then=Value(0.5)),
-                default=Value(0.0),
-                output_field=FloatField()
-            )
-        ).aggregate(total=Sum('leave_day_value'))['total'] or 0.0
+        total_duration = timesheets.aggregate(total=Sum("duration"))["total"] or 0
+        leave_days = (
+            timesheets.annotate(
+                leave_day_value=Case(
+                    When(work_type="full_day_leave", then=Value(1.0)),
+                    When(work_type="half_day_leave", then=Value(0.5)),
+                    default=Value(0.0),
+                    output_field=FloatField(),
+                )
+            ).aggregate(total=Sum("leave_day_value"))["total"]
+            or 0.0
+        )
 
         try:
             df = pd.DataFrame(raw_data)
             if not df.empty:
-                df.rename(columns={
-                    "project_name": "Project",
-                    "date": "Date",
-                    "description": "Description",
-                    "duration": "Hours"
-                }, inplace=True)
+                df.rename(
+                    columns={
+                        "project_name": "Project",
+                        "date": "Date",
+                        "description": "Description",
+                        "duration": "Hours",
+                    },
+                    inplace=True,
+                )
 
                 validator = TimeValidator()
                 validated_df = validator.validate(df)
@@ -666,7 +946,9 @@ class TimesheetListCreateView(APIView):
                 summary_data = []
 
         except Exception as e:
-            return Response({"error": "Validation failed", "details": str(e)}, status=500)
+            return Response(
+                {"error": "Validation failed", "details": str(e)}, status=500
+            )
         today = date.today()
         if month and year:
             try:
@@ -680,21 +962,23 @@ class TimesheetListCreateView(APIView):
                 expected_dates = {
                     (start_date + timedelta(days=i)).isoformat()
                     for i in range((end_check_date - start_date).days + 1)
-                    if (start_date + timedelta(days=i)).weekday() < 5  
+                    if (start_date + timedelta(days=i)).weekday() < 5
                 }
 
                 existing_dates = {ts.get("date") for ts in raw_data}
                 missing_dates = expected_dates - existing_dates
 
                 for missed_date in sorted(missing_dates):
-                    raw_data.append({
-                        "date": missed_date,
-                        "duration": 0,
-                        "work_type": "working",
-                        "Status": f"You missed this date {missed_date}.Please fill in the timesheet"
-                    })
+                    raw_data.append(
+                        {
+                            "date": missed_date,
+                            "duration": 0,
+                            "work_type": "working",
+                            "Status": f"You missed this date {missed_date}.Please fill in the timesheet",
+                        }
+                    )
             except ValueError:
-                pass     
+                pass
         status_map = {
             (entry["Date"], entry["Hours"]): entry.get("Status", "")
             for entry in validated_data
@@ -706,45 +990,59 @@ class TimesheetListCreateView(APIView):
             if "Status" not in ts:
                 ts["Status"] = status_map.get((date_val, hours), "")
 
-        return Response({
-            "timesheets": raw_data,
-            "validated_data": validated_data,
-            "validation_summary": summary_data,
-            "statistics": {
-                "total_duration": total_duration,
-                "leave_days": leave_days
+        return Response(
+            {
+                "timesheets": raw_data,
+                "validated_data": validated_data,
+                "validation_summary": summary_data,
+                "statistics": {
+                    "total_duration": total_duration,
+                    "leave_days": leave_days,
+                },
             }
-        })
+        )
 
     def post(self, request):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
-        user_project_id = request.data.get('user_project')
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        user_project_id = request.data.get("user_project")
         try:
             user_project = UserProject.objects.get(id=user_project_id)
             if user_project.user.id != user.id:
                 return Response(
-                    {"error": "You can only create timesheets for your own project assignments"},
-                    status=status.HTTP_403_FORBIDDEN
+                    {
+                        "error": "You can only create timesheets for your own project assignments"
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
                 )
         except UserProject.DoesNotExist:
-            return Response({"error": "User-Project assignment not found"},
-                            status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "User-Project assignment not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         serializer = TimesheetSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+
 class TimesheetDetailView(APIView):
     """Retrieve, update, or delete a timesheet instance"""
 
     def get_object(self, pk, user):
         try:
             timesheet = Timesheet.objects.get(pk=pk)
-            if timesheet.user_project.user == user or user.is_staff or user.is_superuser:
+            if (
+                timesheet.user_project.user == user
+                or user.is_staff
+                or user.is_superuser
+            ):
                 return timesheet
             return None
         except Timesheet.DoesNotExist:
@@ -753,37 +1051,54 @@ class TimesheetDetailView(APIView):
     def get(self, request, pk):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         timesheet = self.get_object(pk, user)
         if not timesheet:
-            return Response({"error": "Timesheet not found or access denied"}, 
-                            status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Timesheet not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         return Response(TimesheetSerializer(timesheet).data)
 
     def patch(self, request, pk):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         timesheet = self.get_object(pk, user)
         if not timesheet:
-            return Response({"error": "Timesheet not found or access denied"}, 
-                            status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Timesheet not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
-        user_project_id = request.data.get('user_project')
+        user_project_id = request.data.get("user_project")
         if user_project_id:
             try:
                 user_project = UserProject.objects.get(id=user_project_id)
-                if not (user.is_staff or user.is_superuser) and user_project.user.id != user.id:
+                if (
+                    not (user.is_staff or user.is_superuser)
+                    and user_project.user.id != user.id
+                ):
                     return Response(
-                        {"error": "You can only assign timesheets to your own project assignments"}, 
-                        status=status.HTTP_403_FORBIDDEN
+                        {
+                            "error": "You can only assign timesheets to your own project assignments"
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
                     )
             except UserProject.DoesNotExist:
-                return Response({"error": "User-Project assignment not found"}, 
-                                status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {"error": "User-Project assignment not found"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
 
         status_value = request.data.get("status")
         if status_value:
@@ -803,66 +1118,81 @@ class TimesheetDetailView(APIView):
     def delete(self, request, pk):
         user = get_user_from_request(request)
         if not user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         timesheet = self.get_object(pk, user)
         if not timesheet:
-            return Response({"error": "Timesheet not found or access denied"}, 
-                            status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Timesheet not found or access denied"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         timesheet.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
 class UserTimesheetListView(APIView):
     """Simple list of users with their projects and links to timesheets"""
-    
+
     def get(self, request):
         requesting_user = get_user_from_request(request)
         if not requesting_user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
-        
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
         if requesting_user.is_staff:
-            users = User.objects.filter(is_active=True).order_by('name')
-            user_projects = UserProject.objects.all().select_related('project')
+            users = User.objects.filter(is_active=True).order_by("name")
+            user_projects = UserProject.objects.all().select_related("project")
         else:
             users = User.objects.filter(id=requesting_user.id)
-            user_projects = UserProject.objects.filter(user=requesting_user).select_related('project')
-        
+            user_projects = UserProject.objects.filter(
+                user=requesting_user
+            ).select_related("project")
+
         response_data = []
-        base_url = request.build_absolute_uri('/')[:-1] 
-        
+        base_url = request.build_absolute_uri("/")[:-1]
+
         for user in users:
             user_data = {
-                'user_id': user.id,
-                'user_name': user.name,
-                'user_email': user.email,
-                'projects': []
+                "user_id": user.id,
+                "user_name": user.name,
+                "user_email": user.email,
+                "projects": [],
             }
-            
+
             up_for_user = user_projects.filter(user=user)
-            
+
             for up in up_for_user:
                 project_data = {
-                    'user_project_id': up.id, 
-                    'project_id': up.project.id,
-                    'project_name': up.project.name,
-                    'role': up.role,
-                    'timesheets_link': f"user-timesheet/{up.id}/{up.project.id}"  
+                    "user_project_id": up.id,
+                    "project_id": up.project.id,
+                    "project_name": up.project.name,
+                    "role": up.role,
+                    "timesheets_link": f"user-timesheet/{up.id}/{up.project.id}",
                 }
-                user_data['projects'].append(project_data)
-            
+                user_data["projects"].append(project_data)
+
             response_data.append(user_data)
-        
+
         if not requesting_user.is_staff and response_data:
             return Response(response_data[0])
-        
+
         return Response(response_data)
-        
+
+
 class TimesheetAPIView(APIView):
     def get(self, request):
         user = request.user
         if not user.is_authenticated:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         timesheets = Timesheet.objects.all()
         if not user.is_staff:
@@ -874,34 +1204,43 @@ class TimesheetAPIView(APIView):
         year = request.query_params.get("year")
         if month_year:
             try:
-                month, year = map(int, month_year.split('/'))
+                month, year = map(int, month_year.split("/"))
                 timesheets = timesheets.filter(date__month=month, date__year=year)
             except ValueError:
-                return Response({"error": "Invalid 'month_year' format. Use MM/YYYY."}, status=400)
+                return Response(
+                    {"error": "Invalid 'month_year' format. Use MM/YYYY."}, status=400
+                )
         elif month and year:
             try:
-                timesheets = timesheets.filter(date__month=int(month), date__year=int(year))
+                timesheets = timesheets.filter(
+                    date__month=int(month), date__year=int(year)
+                )
             except ValueError:
                 return Response({"error": "Invalid month/year."}, status=400)
 
-        if 'project_id' in request.query_params:
-            timesheets = timesheets.filter(user_project__project_id=request.query_params['project_id'])
+        if "project_id" in request.query_params:
+            timesheets = timesheets.filter(
+                user_project__project_id=request.query_params["project_id"]
+            )
 
-        if 'work_type' in request.query_params:
-            timesheets = timesheets.filter(work_type=request.query_params['work_type'])
+        if "work_type" in request.query_params:
+            timesheets = timesheets.filter(work_type=request.query_params["work_type"])
 
         serializer = TimesheetSerializer(timesheets, many=True)
         timesheet_data = serializer.data
 
-        total_duration = timesheets.aggregate(total=Sum('duration'))['total'] or 0
-        leave_days = timesheets.annotate(
-            leave_day_value=Case(
-                When(work_type='full_day_leave', then=Value(1.0)),
-                When(work_type='half_day_leave', then=Value(0.5)),
-                default=Value(0.0),
-                output_field=FloatField()
-            )
-        ).aggregate(total=Sum('leave_day_value'))['total'] or 0.0
+        total_duration = timesheets.aggregate(total=Sum("duration"))["total"] or 0
+        leave_days = (
+            timesheets.annotate(
+                leave_day_value=Case(
+                    When(work_type="full_day_leave", then=Value(1.0)),
+                    When(work_type="half_day_leave", then=Value(0.5)),
+                    default=Value(0.0),
+                    output_field=FloatField(),
+                )
+            ).aggregate(total=Sum("leave_day_value"))["total"]
+            or 0.0
+        )
 
         validated_records = []
         summary = []
@@ -910,74 +1249,133 @@ class TimesheetAPIView(APIView):
             try:
                 df = pd.DataFrame(timesheet_data)
 
-                df.rename(columns={
-                    "project_name": "Project",
-                    "date": "Date",
-                    "description": "Description",
-                    "duration": "Hours"
-                }, inplace=True)
+                df.rename(
+                    columns={
+                        "project_name": "Project",
+                        "date": "Date",
+                        "description": "Description",
+                        "duration": "Hours",
+                    },
+                    inplace=True,
+                )
 
                 validator = TimeValidator()
                 validated_df = validator.validate(df)
                 summary_df = validator.create_summary({"Timesheet": validated_df})
 
-                validated_records = validated_df.astype(str).to_dict(orient='records')
-                summary = summary_df.astype(str).to_dict(orient='records')
+                validated_records = validated_df.astype(str).to_dict(orient="records")
+                summary = summary_df.astype(str).to_dict(orient="records")
 
             except Exception as e:
                 return Response({"error": "Validation failed", "details": str(e)})
-    
-        return Response({
-            "timesheets": timesheet_data,
-            "validated_timesheets": validated_records,
-            "validation_summary": summary,
-            "statistics": {
-                "total_duration": total_duration,
-                "leave_days": leave_days
-            }
-        }, status=200)
 
-#PPT Automation API  
+        return Response(
+            {
+                "timesheets": timesheet_data,
+                "validated_timesheets": validated_records,
+                "validation_summary": summary,
+                "statistics": {
+                    "total_duration": total_duration,
+                    "leave_days": leave_days,
+                },
+            },
+            status=200,
+        )
+
+
+# PPT Automation API
 class PPTAutomationAPI(APIView):
+    def get(self, request):
+        user = get_user_from_request(request)
+        if not user:
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        from core_app.models import PPTGenerationLog
+        from core_app.serializers import PPTGenerationLogSerializer
+
+        logs = PPTGenerationLog.objects.all()[:50]
+        return Response(PPTGenerationLogSerializer(logs, many=True).data)
+
     def post(self, request):
+        user = get_user_from_request(request)
+        if not user:
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
         serializer = UploadExcelSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        data = serializer.validated_data
-        output_path = os.path.join(settings.MEDIA_ROOT, 'Final_Anniversary_Presentation.pptx')
-        
-        try:
-            excel_path = os.path.join(settings.MEDIA_ROOT, 'uploaded.xlsx')
-            with open(excel_path, 'wb+') as destination:
-                for chunk in request.FILES['file'].chunks():
-                    destination.write(chunk)
 
-            template_path = os.path.join(settings.MEDIA_ROOT, 'WorkAnniversaryLogo.pptx')
+        data = serializer.validated_data
+        output_path = os.path.join(
+            settings.MEDIA_ROOT, "Final_Anniversary_Presentation.pptx"
+        )
+
+        try:
+            excel_path = None
+            if "file" in request.FILES:
+                excel_path = os.path.join(settings.MEDIA_ROOT, "uploaded.xlsx")
+                with open(excel_path, "wb+") as destination:
+                    for chunk in request.FILES["file"].chunks():
+                        destination.write(chunk)
+
+            # Since batch file is optional in the UI, we might have no file.
+            template_path = os.path.join(
+                settings.MEDIA_ROOT, "WorkAnniversaryLogo.pptx"
+            )
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            
+
+            # If no file, we might just generate one slide using the provided user_name & years,
+            # if `generate_presentation` supports excel_path=None.
+            # Assuming it does (or if it doesn't we pass an empty/dummy excel).
             generate_presentation(
                 template_path=template_path,
-                excel_path=excel_path,
+                excel_path=excel_path if excel_path else "dummy.xlsx",
                 output_path=output_path,
-                user_name=data['name'],
-                years_of_service=data['years']
+                user_name=data["name"],
+                years_of_service=data["years"],
             )
-            return FileResponse(open(output_path, 'rb'), filename='Anniversary_Slides.pptx')
-            
+
+            # Create Log
+            from core_app.models import PPTGenerationLog
+
+            PPTGenerationLog.objects.create(
+                employee_name=data["name"],
+                years_of_service=str(data["years"]),
+                created_by=user,
+            )
+
+            return FileResponse(
+                open(output_path, "rb"), filename="Anniversary_Slides.pptx"
+            )
+
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 # Timesheet Automation API
-class TimeTrackingAPI(APIView):  
+class TimeTrackingAPI(APIView):
     def setup_directories(self):
         """Setup required directories"""
-        self.timesheet_dir = os.path.join(settings.MEDIA_ROOT, 'time_tracking')
-        self.output_dir = os.path.join(settings.MEDIA_ROOT, 'time_tracking_outputs')
-        self.archive_dir = os.path.join(settings.MEDIA_ROOT, 'time_tracking_archives')
-        self.validation_dir = os.path.join(settings.MEDIA_ROOT, 'time_tracking_validations')
-        
-        for directory in [self.timesheet_dir, self.output_dir, self.archive_dir, self.validation_dir]:
+        self.timesheet_dir = os.path.join(settings.MEDIA_ROOT, "time_tracking")
+        self.output_dir = os.path.join(settings.MEDIA_ROOT, "time_tracking_outputs")
+        self.archive_dir = os.path.join(settings.MEDIA_ROOT, "time_tracking_archives")
+        self.validation_dir = os.path.join(
+            settings.MEDIA_ROOT, "time_tracking_validations"
+        )
+
+        for directory in [
+            self.timesheet_dir,
+            self.output_dir,
+            self.archive_dir,
+            self.validation_dir,
+        ]:
             os.makedirs(directory, exist_ok=True)
 
     def post(self, request):
@@ -987,12 +1385,14 @@ class TimeTrackingAPI(APIView):
 
         self.setup_directories()
         validator = TimeValidator()
-        output_manager = OutputManager(self.output_dir, self.archive_dir, self.validation_dir)
+        output_manager = OutputManager(
+            self.output_dir, self.archive_dir, self.validation_dir
+        )
 
         try:
-            timesheet_file = request.FILES['timesheet_file']
+            timesheet_file = request.FILES["timesheet_file"]
             timesheet_path = os.path.join(self.timesheet_dir, timesheet_file.name)
-            with open(timesheet_path, 'wb+') as dest:
+            with open(timesheet_path, "wb+") as dest:
                 for chunk in timesheet_file.chunks():
                     dest.write(chunk)
 
@@ -1000,20 +1400,27 @@ class TimeTrackingAPI(APIView):
 
             if not validation_result["success"]:
                 return Response(
-                    {'status': 'Invalid', 'flag': validation_result.get('error', 'Unknown error')},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {
+                        "status": "Invalid",
+                        "flag": validation_result.get("error", "Unknown error"),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
             # Process validated sheets
             validated_sheets = {}
-            for sheet_name, df in validation_result['validated_sheets'].items():
+            for sheet_name, df in validation_result["validated_sheets"].items():
                 processed_records = []
-                for record in df.astype(str).to_dict(orient='records'):
+                for record in df.astype(str).to_dict(orient="records"):
                     status = "Valid"
                     flag = ""
 
                     # Check if Status column has issues
-                    if "Status" in record and record["Status"] and record["Status"] not in ["OK", "Valid"]:
+                    if (
+                        "Status" in record
+                        and record["Status"]
+                        and record["Status"] not in ["OK", "Valid"]
+                    ):
                         status = "Invalid"
                         flag = f"⚠ {record['Status']}"
 
@@ -1025,12 +1432,16 @@ class TimeTrackingAPI(APIView):
 
             # Process summary data
             summary_data = []
-            summary_df = validation_result['summary'].astype(str)
-            for record in summary_df.to_dict(orient='records'):
+            summary_df = validation_result["summary"].astype(str)
+            for record in summary_df.to_dict(orient="records"):
                 status = "Valid"
                 flag = ""
 
-                if "Status" in record and record["Status"] and record["Status"] not in ["OK", "Valid"]:
+                if (
+                    "Status" in record
+                    and record["Status"]
+                    and record["Status"] not in ["OK", "Valid"]
+                ):
                     status = "Invalid"
                     flag = f"⚠ {record['Status']}"
 
@@ -1038,84 +1449,123 @@ class TimeTrackingAPI(APIView):
                 record["Flag"] = flag
                 summary_data.append(record)
 
-            validation_type = serializer.validated_data.get('validation_type', 'standard')
-            validation_number = 1 if validation_type == 'custom' else None
-            validated_file_path = output_manager.save_validated_data(validation_result, validation_number)
+            validation_type = serializer.validated_data.get(
+                "validation_type", "standard"
+            )
+            validation_number = 1 if validation_type == "custom" else None
+            
+            new_file_name = timesheet_file.name
+
+            import math
+            def sanitize_nans(obj):
+                if isinstance(obj, dict):
+                    return {k: sanitize_nans(v) for k, v in obj.items()}
+                elif isinstance(obj, list):
+                    return [sanitize_nans(v) for v in obj]
+                elif isinstance(obj, float):
+                    if math.isnan(obj) or math.isinf(obj):
+                        return None
+                    return obj
+                return obj
+
+            validated_file_path = output_manager.save_validated_data(
+                validation_result, validation_number
+            )
+
+            response_data = {
+                "file_name": new_file_name,
+                "validated_data": validated_sheets,
+                "validation_summary": summary_data,
+                "success": True,
+            }
 
             if validated_file_path:
                 zip_path = output_manager.create_zip_archive(validated_file_path)
 
-            return Response({
-                'file_name': timesheet_file.name,
-                'validated_data': validated_sheets,
-                'validation_summary': summary_data,
-                'success': True
-            })
+            return Response(sanitize_nans(response_data))
+
 
         except Exception as e:
-            return Response({
-                'status': 'Invalid',
-                'flag': str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
-class TimeTrackingTemplateAPI(APIView): 
+            return Response(
+                {"status": "Invalid", "flag": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class TimeTrackingTemplateAPI(APIView):
     def setup_directories(self):
         """Setup required directories"""
-        self.output_dir = os.path.join(settings.MEDIA_ROOT, 'time_tracking_outputs')
-        self.archive_dir = os.path.join(settings.MEDIA_ROOT, 'time_tracking_archives')
-        self.validation_dir = os.path.join(settings.MEDIA_ROOT, 'time_tracking_validations')
+        self.output_dir = os.path.join(settings.MEDIA_ROOT, "time_tracking_outputs")
+        self.archive_dir = os.path.join(settings.MEDIA_ROOT, "time_tracking_archives")
+        self.validation_dir = os.path.join(
+            settings.MEDIA_ROOT, "time_tracking_validations"
+        )
         os.makedirs(self.output_dir, exist_ok=True)
 
     def post(self, request):
         serializer = GenerateTemplateSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         self.setup_directories()
-        output_manager = OutputManager(self.output_dir, self.archive_dir, self.validation_dir)
-        
+        output_manager = OutputManager(
+            self.output_dir, self.archive_dir, self.validation_dir
+        )
+
         try:
-            month = serializer.validated_data.get('month')
-            year = serializer.validated_data.get('year')
-            
-            template_path = output_manager.generate_monthly_template(month, year)
-            
+            month = serializer.validated_data.get("month")
+            year = serializer.validated_data.get("year")
+
+            user_name = "User"
+            if request.user.is_authenticated:
+                user_name = request.user.name.split()[0] if getattr(request.user, "name", None) else request.user.first_name
+                if not user_name:
+                    user_name = "User"
+
+            template_path = output_manager.generate_monthly_template(month, year, user_name)
+
             if template_path and os.path.exists(template_path):
-                return Response({
-                    'success': True,
-                    'template_path': os.path.basename(template_path),
-                    'download_url': f'/api/time-tracking/templates/{os.path.basename(template_path)}/'
-                })
+                return Response(
+                    {
+                        "success": True,
+                        "template_path": os.path.basename(template_path),
+                        "download_url": f"/api/time-tracking/templates/{os.path.basename(template_path)}/",
+                    }
+                )
             else:
                 return Response(
-                    {'success': False, 'error': 'Failed to generate template'},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    {"success": False, "error": "Failed to generate template"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
-                
+
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def get(self, request, filename):
         """Download template"""
-        template_path = os.path.join(settings.MEDIA_ROOT, 'time_tracking_outputs', filename)
-        
+        template_path = os.path.join(
+            settings.MEDIA_ROOT, "time_tracking_outputs", filename
+        )
+
         if os.path.exists(template_path):
-            return FileResponse(open(template_path, 'rb'), filename=filename)
+            return FileResponse(open(template_path, "rb"), filename=filename)
         else:
             return Response(
-                {'error': 'Template file not found'},
-                status=status.HTTP_404_NOT_FOUND
+                {"error": "Template file not found"}, status=status.HTTP_404_NOT_FOUND
             )
-        
-class TimeTrackingEmailAPI(APIView):  
+
+
+class TimeTrackingEmailAPI(APIView):
     def post(self, request):
         serializer = EmailSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        recipient_email = serializer.validated_data['recipient_email']
-        json_data = serializer.validated_data['json_data']
-        project = json_data.get('file_name', 'Unknown File')
+
+        recipient_email = serializer.validated_data["recipient_email"]
+        json_data = serializer.validated_data["json_data"]
+        project = json_data.get("file_name", "Unknown File")
         sender = request.user if request.user.is_authenticated else None
         recipient_user = User.objects.filter(email=recipient_email).first()
 
@@ -1126,26 +1576,30 @@ class TimeTrackingEmailAPI(APIView):
             success, flag_count = email_sender.send_flagged_data(
                 recipient_email=recipient_email,
                 subject=default_subject,
-                json_data=json_data
+                json_data=json_data,
             )
 
             TimesheetEmailLog.objects.create(
                 recipient=recipient_user,
                 project_name=project,
-                status="Success" if success else "Email sending failed without exception",
+                status="Success"
+                if success
+                else "Email sending failed without exception",
                 email_content=json_data,
-                sent_by=sender
+                sent_by=sender,
             )
 
             if success:
-                return Response({
-                    'success': True,
-                    'message': f"Sent {flag_count} flagged entries to {recipient_email}"
-                })
+                return Response(
+                    {
+                        "success": True,
+                        "message": f"Sent {flag_count} flagged entries to {recipient_email}",
+                    }
+                )
             else:
                 return Response(
-                    {'success': False, 'error': "Failed to send flagged entries"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    {"success": False, "error": "Failed to send flagged entries"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
 
         except Exception as e:
@@ -1154,17 +1608,22 @@ class TimeTrackingEmailAPI(APIView):
                 project_name=project,
                 status=str(e),
                 email_content=json_data,
-                sent_by=sender
+                sent_by=sender,
             )
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 class RequestPasswordResetView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        email = request.data.get('email')
+        email = request.data.get("email")
         if not email:
-            return Response({"status": "error", "message": "Email is required"}, status=400)
+            return Response(
+                {"status": "error", "message": "Email is required"}, status=400
+            )
 
         User = get_user_model()
         try:
@@ -1182,34 +1641,51 @@ class RequestPasswordResetView(APIView):
 
             If you didn't request this, you can ignore this email.
 
-            """ 
+            """
 
             msg = MIMEText(email_body)
-            msg['Subject'] = "Password Reset Instructions"
-            msg['From'] = settings.DEFAULT_FROM_EMAIL
-            msg['To'] = user.email
+            msg["Subject"] = "Password Reset Instructions"
+            msg["From"] = settings.DEFAULT_FROM_EMAIL
+            msg["To"] = user.email
 
             with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
                 server.starttls()
                 server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-                server.sendmail(settings.DEFAULT_FROM_EMAIL, [user.email], msg.as_string())
+                server.sendmail(
+                    settings.DEFAULT_FROM_EMAIL, [user.email], msg.as_string()
+                )
 
-            return Response({"status": "success", "message": "Password reset link sent to email", "reset_token": token})
+            return Response(
+                {
+                    "status": "success",
+                    "message": "Password reset link sent to email",
+                    "reset_token": token,
+                }
+            )
         except User.DoesNotExist:
-            return Response({"status": "error", "message": "User not found"}, status=404)
+            return Response(
+                {"status": "error", "message": "User not found"}, status=404
+            )
         except Exception as e:
             logger.error(f"[RESET_EMAIL_ERROR] {str(e)}")
-            return Response({"status": "error", "message": f"Failed to send email: {str(e)}"}, status=500)
+            return Response(
+                {"status": "error", "message": f"Failed to send email: {str(e)}"},
+                status=500,
+            )
+
 
 class ConfirmPasswordResetView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        token = request.data.get('token')
-        new_password = request.data.get('new_password')
+        token = request.data.get("token")
+        new_password = request.data.get("new_password")
 
         if not token or not new_password:
-            return Response({"status": "error", "message": "Token and new password are required"}, status=400)
+            return Response(
+                {"status": "error", "message": "Token and new password are required"},
+                status=400,
+            )
 
         try:
             user_id = verify_password_reset_token(token)
@@ -1217,47 +1693,66 @@ class ConfirmPasswordResetView(APIView):
             user = User.objects.get(id=user_id)
             user.set_password(new_password)
             user.save()
-            return Response({"status": "success", "message": "Password has been reset successfully"})
+            return Response(
+                {"status": "success", "message": "Password has been reset successfully"}
+            )
         except ValueError as e:
             return Response({"status": "error", "message": str(e)}, status=400)
         except User.DoesNotExist:
-            return Response({"status": "error", "message": "User not found",}, status=404)
-        
+            return Response(
+                {
+                    "status": "error",
+                    "message": "User not found",
+                },
+                status=404,
+            )
+
+
 class ValidateMultipleTimesheetView(APIView):
-    
     def get(self, request):
         requesting_user = get_user_from_request(request)
         if not requesting_user:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         month = request.query_params.get("month")
         year = request.query_params.get("year")
         if not month or not year:
-            return Response({"error": "month and year are required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "month and year are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             month = int(month)
             year = int(year)
         except ValueError:
-            return Response({"error": "Invalid month or year format."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid month or year format."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         month_date = date(year, month, 1)
 
         if requesting_user.is_staff:
-            users = User.objects.filter(is_active=True).order_by('name')
-            user_projects = UserProject.objects.all().select_related('project')
+            users = User.objects.filter(is_active=True).order_by("name")
+            user_projects = UserProject.objects.all().select_related("project")
         else:
             users = User.objects.filter(id=requesting_user.id)
-            user_projects = UserProject.objects.filter(user=requesting_user).select_related('project')
+            user_projects = UserProject.objects.filter(
+                user=requesting_user
+            ).select_related("project")
 
         response_data = []
 
         for user in users:
             user_data = {
-                'user_id': user.id,
-                'user_name': user.name,
-                'user_email': user.email,
-                'projects': []
+                "user_id": user.id,
+                "user_name": user.name,
+                "user_email": user.email,
+                "projects": [],
             }
 
             up_for_user = user_projects.filter(user=user)
@@ -1265,11 +1760,16 @@ class ValidateMultipleTimesheetView(APIView):
             for up in up_for_user:
                 project_id = up.project.id
 
-                validation_logs = AutomationTimesheet.objects.filter(month=month_date).order_by('-updated_at')
+                validation_logs = AutomationTimesheet.objects.filter(
+                    month=month_date
+                ).order_by("-updated_at")
                 latest_log = None
                 for log in validation_logs:
                     saved_map = log.result.get("user_project_map", {})
-                    if str(user.id) in saved_map and project_id in saved_map[str(user.id)]:
+                    if (
+                        str(user.id) in saved_map
+                        and project_id in saved_map[str(user.id)]
+                    ):
                         latest_log = log
                         break
 
@@ -1281,22 +1781,22 @@ class ValidateMultipleTimesheetView(APIView):
                     validated_data = latest_log.result.get("validated_data", {})
                     user_key = str(user.id)
                     project_key = str(project_id)
-                    user_projects_data = validated_data.get(user_key, {}).get(project_key, [])
+                    user_projects_data = validated_data.get(user_key, {}).get(
+                        project_key, []
+                    )
 
                     actual_entries = Timesheet.objects.filter(
-                        user_project=up,
-                        date__year=year,
-                        date__month=month
-                    ).values('date', 'updated_at')
+                        user_project=up, date__year=year, date__month=month
+                    ).values("date", "updated_at")
 
-                    updated_map = {e['date']: e['updated_at'] for e in actual_entries}
+                    updated_map = {e["date"]: e["updated_at"] for e in actual_entries}
                     actual_dates = set(updated_map.keys())
 
                     _, last_day = calendar.monthrange(year, month)
                     expected_dates = {
                         date(year, month, day)
                         for day in range(1, last_day + 1)
-                        if date(year, month, day).weekday() < 5 
+                        if date(year, month, day).weekday() < 5
                     }
 
                     missing_dates = expected_dates - actual_dates
@@ -1304,7 +1804,7 @@ class ValidateMultipleTimesheetView(APIView):
                     error_flags = []
                     has_changes = False
 
-                    log_time = getattr(latest_log, 'updated_at', latest_log.created_at)
+                    log_time = getattr(latest_log, "updated_at", latest_log.created_at)
                     if is_naive(log_time):
                         log_time = make_aware(log_time, timezone=get_current_timezone())
 
@@ -1320,41 +1820,51 @@ class ValidateMultipleTimesheetView(APIView):
 
                             if ts_updated:
                                 if is_naive(ts_updated):
-                                    ts_updated = make_aware(ts_updated, timezone=get_current_timezone())
+                                    ts_updated = make_aware(
+                                        ts_updated, timezone=get_current_timezone()
+                                    )
 
                                 if ts_updated > log_time:
                                     changed = True
                                     has_changes = True
 
-                        timesheet_validations.append({
-                            **entry,
-                            "changed": changed
-                        })
+                        timesheet_validations.append({**entry, "changed": changed})
 
                         if entry_status == "Invalid" and flag:
                             error_flags.append(flag.strip())
 
                     if not user_projects_data:
                         summary = latest_log.result.get("validation_summary", {})
-                        project_summaries = summary.get(user_key, {}).get(project_key, [])
+                        project_summaries = summary.get(user_key, {}).get(
+                            project_key, []
+                        )
                         for item in project_summaries:
-                            if item.get("Status") == "Invalid" and "no timesheet" in item.get("Flag", "").lower():
-                                timesheet_validations.append({
-                                    "Flag": item["Flag"],
-                                    "Status": item["Status"],
-                                    "changed": False
-                                })
+                            if (
+                                item.get("Status") == "Invalid"
+                                and "no timesheet" in item.get("Flag", "").lower()
+                            ):
+                                timesheet_validations.append(
+                                    {
+                                        "Flag": item["Flag"],
+                                        "Status": item["Status"],
+                                        "changed": False,
+                                    }
+                                )
                                 error_flags.append(item["Flag"])
 
                     if actual_entries:
                         for missing_date in sorted(missing_dates):
-                            timesheet_validations.append({
-                                "Date": missing_date.isoformat(),
-                                "Status": "Invalid",
-                                "Flag": "Missing timesheet entry",
-                                "changed": False
-                            })
-                        error_flags.append(f"Missing timesheet for {missing_date.isoformat()}")
+                            timesheet_validations.append(
+                                {
+                                    "Date": missing_date.isoformat(),
+                                    "Status": "Invalid",
+                                    "Flag": "Missing timesheet entry",
+                                    "changed": False,
+                                }
+                            )
+                        error_flags.append(
+                            f"Missing timesheet for {missing_date.isoformat()}"
+                        )
 
                     if has_changes:
                         validation_status = "Needs rerun"
@@ -1365,16 +1875,16 @@ class ValidateMultipleTimesheetView(APIView):
                         error_messages = "\n".join(error_flags)
 
                 project_data = {
-                    'user_project_id': up.id,
-                    'project_id': project_id,
-                    'project_name': up.project.name,
-                    'role': up.role,
-                    'validation_status': validation_status,
-                    'error': error_messages or None,
-                    'timesheet_validations': timesheet_validations
+                    "user_project_id": up.id,
+                    "project_id": project_id,
+                    "project_name": up.project.name,
+                    "role": up.role,
+                    "validation_status": validation_status,
+                    "error": error_messages or None,
+                    "timesheet_validations": timesheet_validations,
                 }
 
-                user_data['projects'].append(project_data)
+                user_data["projects"].append(project_data)
 
             response_data.append(user_data)
 
@@ -1383,7 +1893,9 @@ class ValidateMultipleTimesheetView(APIView):
     def post(self, request):
         user = get_user_from_request(request)
         if not user or not (user.is_staff or user.is_superuser):
-            return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN
+            )
 
         user_project_map = request.data.get("user_project_map", {})
         month = request.data.get("month")
@@ -1392,7 +1904,7 @@ class ValidateMultipleTimesheetView(APIView):
         if not user_project_map or not month or not year:
             return Response(
                 {"error": "user_project_map, month, and year are required."},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
@@ -1413,64 +1925,89 @@ class ValidateMultipleTimesheetView(APIView):
         for uid, project_ids in user_project_map.items():
             for project_id in project_ids:
                 try:
-                    user_project_qs = UserProject.objects.filter(user_id=uid, project_id=project_id)
+                    user_project_qs = UserProject.objects.filter(
+                        user_id=uid, project_id=project_id
+                    )
                     if not user_project_qs.exists():
                         validated_data[uid][project_id] = []
                         missing_dates[uid][project_id] = []
-                        validation_summary[uid][project_id].append({
-                            "Status": "Invalid",
-                            "Flag": "⚠ User not assigned to this project.",
-                            "user_id": uid,
-                            "project_id": project_id
-                        })
+                        validation_summary[uid][project_id].append(
+                            {
+                                "Status": "Invalid",
+                                "Flag": "⚠ User not assigned to this project.",
+                                "user_id": uid,
+                                "project_id": project_id,
+                            }
+                        )
                         continue
                     timesheets = Timesheet.objects.filter(
                         user_project__in=user_project_qs,
                         date__month=month,
-                        date__year=year
+                        date__year=year,
                     ).select_related("user_project__project")
 
                     if not timesheets.exists():
-                        validation_summary[uid][project_id].append({
-                            "Status": "Invalid",
-                            "Flag": "⚠ No timesheets for this project.",
-                            "user_id": uid,
-                            "project_id": project_id
-                        })
+                        validation_summary[uid][project_id].append(
+                            {
+                                "Status": "Invalid",
+                                "Flag": "⚠ No timesheets for this project.",
+                                "user_id": uid,
+                                "project_id": project_id,
+                            }
+                        )
                         continue
 
                     serializer = TimesheetSerializer(timesheets, many=True)
                     raw_data = serializer.data
                     total_duration += sum(ts.duration for ts in timesheets)
-                    leave_days = sum([
-                        1.0 if ts.work_type == "full_day_leave" else 0.5 if ts.work_type == "half_day_leave" else 0.0
-                        for ts in timesheets
-                    ])
+                    leave_days = sum(
+                        [
+                            1.0
+                            if ts.work_type == "full_day_leave"
+                            else 0.5
+                            if ts.work_type == "half_day_leave"
+                            else 0.0
+                            for ts in timesheets
+                        ]
+                    )
                     total_leave_days += leave_days
 
                     df = pd.DataFrame(raw_data)
                     if not df.empty:
-                        df.rename(columns={
-                            "project_name": "Project",
-                            "date": "Date",
-                            "description": "Description",
-                            "duration": "Hours"
-                        }, inplace=True)
+                        df.rename(
+                            columns={
+                                "project_name": "Project",
+                                "date": "Date",
+                                "description": "Description",
+                                "duration": "Hours",
+                            },
+                            inplace=True,
+                        )
 
                         validator = TimeValidator()
                         result = validator.validate_dataframe(df)
 
                         if result["success"]:
                             enriched_validated = []
-                            for validated_row, raw_row in zip(result["validated_data"], raw_data):
+                            for validated_row, raw_row in zip(
+                                result["validated_data"], raw_data
+                            ):
                                 ts_id = raw_row.get("id")
                                 validated_row["timesheet_id"] = ts_id
                                 if not first_timesheet_id:
                                     first_timesheet_id = ts_id
 
                                 status_text = validated_row.get("Status", "")
-                                validated_row["Status"] = "Valid" if status_text in ["", "OK", "Valid"] else "Invalid"
-                                validated_row["Flag"] = "" if validated_row["Status"] == "Valid" else f"⚠ {status_text}"
+                                validated_row["Status"] = (
+                                    "Valid"
+                                    if status_text in ["", "OK", "Valid"]
+                                    else "Invalid"
+                                )
+                                validated_row["Flag"] = (
+                                    ""
+                                    if validated_row["Status"] == "Valid"
+                                    else f"⚠ {status_text}"
+                                )
 
                                 enriched_validated.append(validated_row)
 
@@ -1478,15 +2015,25 @@ class ValidateMultipleTimesheetView(APIView):
 
                             for summary in result.get("summary_data", []):
                                 s_status = summary.get("Status", "")
-                                summary["Status"] = "Valid" if s_status in ["", "OK", "Valid"] else "Invalid"
-                                summary["Flag"] = "" if summary["Status"] == "Valid" else f"⚠ {s_status}"
+                                summary["Status"] = (
+                                    "Valid"
+                                    if s_status in ["", "OK", "Valid"]
+                                    else "Invalid"
+                                )
+                                summary["Flag"] = (
+                                    ""
+                                    if summary["Status"] == "Valid"
+                                    else f"⚠ {s_status}"
+                                )
                                 validation_summary[uid][project_id].append(summary)
                         else:
-                            errors.append({
-                                "user_id": uid,
-                                "project_id": project_id,
-                                "error": result["error"]
-                            })
+                            errors.append(
+                                {
+                                    "user_id": uid,
+                                    "project_id": project_id,
+                                    "error": result["error"],
+                                }
+                            )
                             continue
 
                     today = date.today()
@@ -1506,15 +2053,15 @@ class ValidateMultipleTimesheetView(APIView):
                     missing_dates[uid][project_id] = missing
 
                 except Exception as e:
-                    errors.append({
-                        "user_id": uid,
-                        "project_id": project_id,
-                        "error": str(e)
-                    })
+                    errors.append(
+                        {"user_id": uid, "project_id": project_id, "error": str(e)}
+                    )
                     continue
 
         has_validations = any(
-            bool(projects) for user in validated_data.values() for projects in user.values()
+            bool(projects)
+            for user in validated_data.values()
+            for projects in user.values()
         )
 
         if errors:
@@ -1529,10 +2076,10 @@ class ValidateMultipleTimesheetView(APIView):
             "validation_summary": validation_summary,
             "statistics": {
                 "total_duration": total_duration,
-                "leave_days": total_leave_days
+                "leave_days": total_leave_days,
             },
             "missing_dates": missing_dates,
-            "errors": errors
+            "errors": errors,
         }
 
         month_date = date(year, month, 1)
@@ -1550,7 +2097,9 @@ class ValidateMultipleTimesheetView(APIView):
                 break
 
         if existing_log:
-            old_validated_data = convert_decimals(existing_log.result.get("validated_data", {}))
+            old_validated_data = convert_decimals(
+                existing_log.result.get("validated_data", {})
+            )
             new_validated_data = convert_decimals(validated_data)
 
             if normalize_dict(old_validated_data) != normalize_dict(new_validated_data):
@@ -1565,7 +2114,7 @@ class ValidateMultipleTimesheetView(APIView):
                     type=TimesheetType.MANUAL,
                     month=month_date,
                     status=overall_status,
-                    result=convert_decimals(result_data)
+                    result=convert_decimals(result_data),
                 )
             except Exception as e:
                 return Response({"error": f"Failed to save log: {str(e)}"}, status=500)
@@ -1575,22 +2124,29 @@ class ValidateMultipleTimesheetView(APIView):
                 existing_log.result = convert_decimals(result_data)
                 existing_log.save()
             except Exception as e:
-                return Response({"error": f"Failed to update log: {str(e)}"}, status=500)
+                return Response(
+                    {"error": f"Failed to update log: {str(e)}"}, status=500
+                )
         result_data["status"] = overall_status
         return Response(result_data, status=200)
+
 
 class PushTimesheetEmailView(APIView):
     def post(self, request):
         user = get_user_from_request(request)
         if not user or not (user.is_staff or user.is_superuser):
-            return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN
+            )
 
         user_project_map = request.data.get("user_project_map")
         month = request.data.get("month")
         year = request.data.get("year")
 
         if not user_project_map or not month or not year:
-            return Response({"error": "user_project_map, month, and year are required."}, status=400)
+            return Response(
+                {"error": "user_project_map, month, and year are required."}, status=400
+            )
 
         try:
             month = int(month)
@@ -1599,16 +2155,24 @@ class PushTimesheetEmailView(APIView):
             return Response({"error": "Month and year must be integers."}, status=400)
 
         month_date = date(year, month, 1)
-        log = AutomationTimesheet.objects.filter(month=month_date, status='Success').order_by('-id').first()
+        log = (
+            AutomationTimesheet.objects.filter(month=month_date, status="Success")
+            .order_by("-id")
+            .first()
+        )
 
         if not log:
-            return Response({"error": "No validation log found for given month."}, status=404)
+            return Response(
+                {"error": "No validation log found for given month."}, status=404
+            )
 
         full_result = log.result or {}
         validated_data = full_result.get("validated_data", {})
 
         if not validated_data:
-            return Response({"error": "No validated data found in the automation log."}, status=404)
+            return Response(
+                {"error": "No validated data found in the automation log."}, status=404
+            )
 
         email_sender = EmailSender()
         success_emails = []
@@ -1631,29 +2195,46 @@ class PushTimesheetEmailView(APIView):
                 missing_data = user_missing_data.get(project_id_str, [])
 
                 if not sheet_data and not missing_data:
-                    failed_emails.append(f"❌ No data found for User ID {uid}, Project ID {project_id}.")
+                    failed_emails.append(
+                        f"❌ No data found for User ID {uid}, Project ID {project_id}."
+                    )
                     continue
 
                 json_data = {
                     "validated_data": sheet_data,
                     "missing_dates": missing_data,
-                    "file_name": f"Project {project_id}"
+                    "file_name": f"Project {project_id}",
                 }
 
                 # Check upfront whether there is anything to flag
-                flagged = [e for e in (sheet_data if isinstance(sheet_data, list) else []) if e.get('Status') != 'Valid']
-                flat_missing = missing_data if isinstance(missing_data, list) else (
-                    [d for dates in missing_data.values() for d in (dates if isinstance(dates, list) else [dates])]
-                    if isinstance(missing_data, dict) else []
+                flagged = [
+                    e
+                    for e in (sheet_data if isinstance(sheet_data, list) else [])
+                    if e.get("Status") != "Valid"
+                ]
+                flat_missing = (
+                    missing_data
+                    if isinstance(missing_data, list)
+                    else (
+                        [
+                            d
+                            for dates in missing_data.values()
+                            for d in (dates if isinstance(dates, list) else [dates])
+                        ]
+                        if isinstance(missing_data, dict)
+                        else []
+                    )
                 )
                 if not flagged and not flat_missing:
-                    failed_emails.append(f"⚠️ {user.email} - No flagged entries or missing dates to send")
+                    failed_emails.append(
+                        f"⚠️ {user.email} - No flagged entries or missing dates to send"
+                    )
                     continue
 
                 success, count = email_sender.send_flagged_data(
                     recipient_email=user.email,
                     subject=f"Time Tracking Flags - Project {project_id}",
-                    json_data=json_data
+                    json_data=json_data,
                 )
 
                 TimesheetEmailLog.objects.create(
@@ -1661,18 +2242,23 @@ class PushTimesheetEmailView(APIView):
                     project_name=f"Project {project_id}",
                     status="Success" if success else "Failed",
                     email_content=json_data,
-                    sent_by=request.user if request.user.is_authenticated else None
+                    sent_by=request.user if request.user.is_authenticated else None,
                 )
 
                 if success:
                     success_emails.append(f"✅ {user.email} - {count} issues")
                 else:
-                    failed_emails.append(f"❌ {user.email} - SMTP send failed (check server logs for details)")
+                    failed_emails.append(
+                        f"❌ {user.email} - SMTP send failed (check server logs for details)"
+                    )
 
-        return Response({
-            "sent": success_emails,
-            "failed": failed_emails,
-        }, status=200 if not failed_emails else 207)
+        return Response(
+            {
+                "sent": success_emails,
+                "failed": failed_emails,
+            },
+            status=200 if not failed_emails else 207,
+        )
 
 
 class ProjectUserRolesView(APIView):
@@ -1681,19 +2267,21 @@ class ProjectUserRolesView(APIView):
     def get(self, request):
         user = get_user_from_request(request)
         if not user or not (user.is_staff or user.is_superuser):
-            return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN
+            )
 
-        project_search = request.query_params.get('project_search', '').strip()
-        user_search = request.query_params.get('user_search', '').strip()
+        project_search = request.query_params.get("project_search", "").strip()
+        user_search = request.query_params.get("user_search", "").strip()
 
         try:
-            page = max(1, int(request.query_params.get('page', 1)))
-            page_size = min(50, max(1, int(request.query_params.get('page_size', 10))))
+            page = max(1, int(request.query_params.get("page", 1)))
+            page_size = min(50, max(1, int(request.query_params.get("page_size", 10))))
         except (ValueError, TypeError):
             page = 1
             page_size = 10
 
-        projects = Project.objects.all().order_by('name')
+        projects = Project.objects.all().order_by("name")
 
         if project_search:
             projects = projects.filter(name__icontains=project_search)
@@ -1702,18 +2290,20 @@ class ProjectUserRolesView(APIView):
         total_pages = max(1, (total_count + page_size - 1) // page_size)
         page = min(page, total_pages)
         offset = (page - 1) * page_size
-        projects = projects[offset: offset + page_size]
+        projects = projects[offset : offset + page_size]
 
         results = []
         for project in projects:
-            assignments = UserProject.objects.filter(project=project).select_related('user')
+            assignments = UserProject.objects.filter(project=project).select_related(
+                "user"
+            )
             if user_search:
                 assignments = assignments.filter(
-                    Q(user__name__icontains=user_search) |
-                    Q(user__email__icontains=user_search) |
-                    Q(role__icontains=user_search)
+                    Q(user__name__icontains=user_search)
+                    | Q(user__email__icontains=user_search)
+                    | Q(role__icontains=user_search)
                 )
-            assignments = assignments.order_by('role', 'user__name')
+            assignments = assignments.order_by("role", "user__name")
             users = [
                 {
                     "user_id": up.user.id,
@@ -1723,20 +2313,25 @@ class ProjectUserRolesView(APIView):
                 }
                 for up in assignments
             ]
-            results.append({
-                "project_id": project.id,
-                "project_name": project.name,
-                "user_count": UserProject.objects.filter(project=project).count(),
-                "users": users,
-            })
+            results.append(
+                {
+                    "project_id": project.id,
+                    "project_name": project.name,
+                    "user_count": UserProject.objects.filter(project=project).count(),
+                    "users": users,
+                }
+            )
 
-        return Response({
-            "count": total_count,
-            "total_pages": total_pages,
-            "current_page": page,
-            "page_size": page_size,
-            "results": results,
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "count": total_count,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+                "results": results,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class ProjectUsersView(APIView):
@@ -1745,36 +2340,40 @@ class ProjectUsersView(APIView):
     def get(self, request, project_id):
         user = get_user_from_request(request)
         if not user or not (user.is_staff or user.is_superuser):
-            return Response({"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN)
-
+            return Response(
+                {"error": "Admin access required."}, status=status.HTTP_403_FORBIDDEN
+            )
         try:
             project = Project.objects.get(id=project_id)
+            project_description = project.description
         except Project.DoesNotExist:
-            return Response({"error": "Project not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Project not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
-        user_search = request.query_params.get('user_search', '').strip()
+        user_search = request.query_params.get("user_search", "").strip()
 
         try:
-            page = max(1, int(request.query_params.get('page', 1)))
-            page_size = min(50, max(1, int(request.query_params.get('page_size', 12))))
+            page = max(1, int(request.query_params.get("page", 1)))
+            page_size = min(50, max(1, int(request.query_params.get("page_size", 12))))
         except (ValueError, TypeError):
             page = 1
             page_size = 12
 
-        assignments = UserProject.objects.filter(project=project).select_related('user')
+        assignments = UserProject.objects.filter(project=project).select_related("user")
         if user_search:
             assignments = assignments.filter(
-                Q(user__name__icontains=user_search) |
-                Q(user__email__icontains=user_search) |
-                Q(role__icontains=user_search)
+                Q(user__name__icontains=user_search)
+                | Q(user__email__icontains=user_search)
+                | Q(role__icontains=user_search)
             )
-        assignments = assignments.order_by('role', 'user__name')
+        assignments = assignments.order_by("role", "user__name")
 
         total_count = assignments.count()
         total_pages = max(1, (total_count + page_size - 1) // page_size)
         page = min(page, total_pages)
         offset = (page - 1) * page_size
-        assignments = assignments[offset: offset + page_size]
+        assignments = assignments[offset : offset + page_size]
 
         users = [
             {
@@ -1788,29 +2387,40 @@ class ProjectUsersView(APIView):
             for up in assignments
         ]
 
-        return Response({
-            "project_id": project.id,
-            "project_name": project.name,
-            "count": total_count,
-            "total_pages": total_pages,
-            "current_page": page,
-            "page_size": page_size,
-            "users": users,
-        }, status=status.HTTP_200_OK)
+        from django.db.models import Sum
+        total_duration_agg = Timesheet.objects.filter(user_project__project=project).aggregate(total=Sum('duration'))
+        total_duration = total_duration_agg['total'] or 0
+
+        return Response(
+            {
+                "project_id": project.id,
+                "project_name": project.name,
+                "project_description": project_description,
+                "total_duration": float(total_duration),
+                "count": total_count,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+                "users": users,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
 
+
 def _generate_temp_password(length: int = 12) -> str:
     alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
-    return ''.join(secrets.choice(alphabet) for _ in range(length))
+    return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
 # ---------------------------------------------------------------------------
 # Create User (super-admin only)
 # ---------------------------------------------------------------------------
+
 
 class CreateUserView(APIView):
     permission_classes = [AllowAny]
@@ -1823,11 +2433,12 @@ class CreateUserView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        email = request.data.get('email', '').strip().lower()
-        first_name = request.data.get('first_name', '').strip()
-        last_name = request.data.get('last_name', '').strip()
-        role = request.data.get('role', 'user')
-        designation = request.data.get('designation', '').strip()
+        email = request.data.get("email", "").strip().lower()
+        first_name = request.data.get("first_name", "").strip()
+        last_name = request.data.get("last_name", "").strip()
+        role = request.data.get("role", "user")
+        designation = request.data.get("designation", "").strip()
+        date_of_joining = request.data.get("date_of_joining", "").strip()
 
         if not email or not first_name or not last_name:
             return Response(
@@ -1835,7 +2446,7 @@ class CreateUserView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if role not in ('user', 'superadmin'):
+        if role not in ("user", "superadmin"):
             return Response(
                 {"error": "role must be 'user' or 'superadmin'"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -1861,18 +2472,26 @@ class CreateUserView(APIView):
             new_user.last_name = last_name
             new_user.designation = designation
             new_user.password_expires_at = expires_at
+            if date_of_joining:
+                new_user.date_of_joining = date_of_joining
 
-            if role == 'superadmin':
+            if role == "superadmin":
                 new_user.is_staff = True
                 new_user.is_superuser = True
 
             new_user.save()
 
             from core_app.utils.email_service import EmailService
-            EmailService().send_welcome_email_with_temp_password(email, first_name, temp_password)
+
+            EmailService().send_welcome_email_with_temp_password(
+                email, first_name, temp_password
+            )
 
             return Response(
-                {"status": "success", "message": f"User created and credentials sent to {email}"},
+                {
+                    "status": "success",
+                    "message": f"User created and credentials sent to {email}",
+                },
                 status=status.HTTP_201_CREATED,
             )
 
@@ -1888,6 +2507,7 @@ class CreateUserView(APIView):
 # Change Password (authenticated user)
 # ---------------------------------------------------------------------------
 
+
 class ChangePasswordView(APIView):
     permission_classes = [AllowAny]
 
@@ -1899,8 +2519,8 @@ class ChangePasswordView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        old_password = request.data.get('old_password', '')
-        new_password = request.data.get('new_password', '')
+        old_password = request.data.get("old_password", "")
+        new_password = request.data.get("new_password", "")
 
         if not old_password or not new_password:
             return Response(
@@ -1923,13 +2543,19 @@ class ChangePasswordView(APIView):
         try:
             user.set_password(new_password)
             user.password_expires_at = None  # clear any temporary-password expiry
+            user.password_changed_at = now()
             user.save()
 
             from core_app.utils.email_service import EmailService
-            display_name = user.first_name or (user.name.split()[0] if user.name else user.email)
+
+            display_name = user.first_name or (
+                user.name.split()[0] if user.name else user.email
+            )
             EmailService().send_password_changed_email(user.email, display_name)
 
-            return Response({"status": "success", "message": "Password changed successfully"})
+            return Response(
+                {"status": "success", "message": "Password changed successfully"}
+            )
 
         except Exception as e:
             logger.error(f"Change password error: {str(e)}")
@@ -1943,75 +2569,88 @@ class ChangePasswordView(APIView):
 # Admin User Management (list / deactivate / delete)
 # ---------------------------------------------------------------------------
 
+
 class UserAdminView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
         requesting_user = get_user_from_request(request)
-        if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
-            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+        if not requesting_user or not (
+            requesting_user.is_staff or requesting_user.is_superuser
+        ):
+            return Response(
+                {"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN
+            )
 
         UserModel = get_user_model()
-        search = request.query_params.get('search', '').strip()
+        search = request.query_params.get("search", "").strip()
 
         try:
-            page = max(1, int(request.query_params.get('page', 1)))
-            page_size = min(50, max(1, int(request.query_params.get('page_size', 15))))
+            page = max(1, int(request.query_params.get("page", 1)))
+            page_size = min(50, max(1, int(request.query_params.get("page_size", 15))))
         except (ValueError, TypeError):
             page, page_size = 1, 15
 
-        queryset = UserModel.objects.all().order_by('name')
+        queryset = UserModel.objects.all().order_by("name")
         if search:
             queryset = queryset.filter(
-                Q(name__icontains=search) |
-                Q(email__icontains=search) |
-                Q(designation__icontains=search)
+                Q(name__icontains=search)
+                | Q(email__icontains=search)
+                | Q(designation__icontains=search)
             )
 
         total = queryset.count()
         total_pages = max(1, (total + page_size - 1) // page_size)
         offset = (page - 1) * page_size
-        users = queryset[offset: offset + page_size]
+        users = queryset[offset : offset + page_size]
 
         # Prefetch user-project assignments for this page in one query
         user_ids = [u.id for u in users]
         user_projects = (
-            UserProject.objects
-            .filter(user_id__in=user_ids)
-            .select_related('project')
-            .values('user_id', 'project__id', 'project__name', 'role')
+            UserProject.objects.filter(user_id__in=user_ids)
+            .select_related("project")
+            .values("user_id", "project__id", "project__name", "role")
         )
         projects_by_user: dict = {}
         for up in user_projects:
-            projects_by_user.setdefault(up['user_id'], []).append({
-                'project_id': up['project__id'],
-                'project_name': up['project__name'],
-                'role': up['role'],
-            })
+            projects_by_user.setdefault(up["user_id"], []).append(
+                {
+                    "project_id": up["project__id"],
+                    "project_name": up["project__name"],
+                    "role": up["role"],
+                }
+            )
 
         data = [
             {
-                'id': u.id,
-                'user_id': str(u.user_id),
-                'name': u.name,
-                'first_name': u.first_name,
-                'last_name': u.last_name,
-                'email': u.email,
-                'designation': u.designation,
-                'role': 'Admin' if (u.is_staff or u.is_superuser) else 'User',
-                'is_active': u.is_active,
-                'projects': projects_by_user.get(u.id, []),
+                "id": u.id,
+                "user_id": str(u.user_id),
+                "name": u.name,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+                "email": u.email,
+                "designation": u.designation,
+                "role": "Admin" if (u.is_staff or u.is_superuser) else "User",
+                "is_active": u.is_active,
+                "projects": projects_by_user.get(u.id, []),
             }
             for u in users
         ]
 
-        return Response({
-            'count': total,
-            'total_pages': total_pages,
-            'current_page': page,
-            'page_size': page_size,
-            'users': data,
-        })
+        active_count = UserModel.objects.filter(is_active=True).count()
+        roles_count = 2 # Admin and User
+
+        return Response(
+            {
+                "count": total,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+                "active_count": active_count,
+                "roles_count": roles_count,
+                "users": data,
+            }
+        )
 
 
 class UserAdminDetailView(APIView):
@@ -2019,40 +2658,74 @@ class UserAdminDetailView(APIView):
 
     def patch(self, request, user_id):
         requesting_user = get_user_from_request(request)
-        if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
-            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+        if not requesting_user or not (
+            requesting_user.is_staff or requesting_user.is_superuser
+        ):
+            return Response(
+                {"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN
+            )
 
         UserModel = get_user_model()
         try:
             target = UserModel.objects.get(id=user_id)
         except UserModel.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
-        if 'is_active' in request.data:
+        if "is_active" in request.data:
             if target.id == requesting_user.id:
                 return Response(
                     {"error": "You cannot deactivate your own account"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            target.is_active = bool(request.data['is_active'])
-            target.save()
+            target.is_active = bool(request.data["is_active"])
+            
+        if "first_name" in request.data or "last_name" in request.data:
+            first_name = request.data.get("first_name", target.first_name)
+            last_name = request.data.get("last_name", target.last_name)
+            target.first_name = first_name
+            target.last_name = last_name
+            target.name = f"{first_name} {last_name}".strip()
 
-        return Response({
-            'id': target.id,
-            'is_active': target.is_active,
-            'message': 'User updated successfully',
-        })
+        if "designation" in request.data:
+            target.designation = request.data["designation"]
+
+        if "role" in request.data:
+            new_role = request.data["role"]
+            if new_role == "superadmin":
+                target.is_staff = True
+                target.is_superuser = True
+            elif new_role == "user":
+                target.is_staff = False
+                target.is_superuser = False
+
+        target.save()
+
+        return Response(
+            {
+                "id": target.id,
+                "is_active": target.is_active,
+                "message": "User updated successfully",
+            }
+        )
 
     def delete(self, request, user_id):
         requesting_user = get_user_from_request(request)
-        if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
-            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+        if not requesting_user or not (
+            requesting_user.is_staff or requesting_user.is_superuser
+        ):
+            return Response(
+                {"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN
+            )
 
         UserModel = get_user_model()
         try:
             target = UserModel.objects.get(id=user_id)
         except UserModel.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         if target.id == requesting_user.id:
             return Response(
@@ -2061,12 +2734,44 @@ class UserAdminDetailView(APIView):
             )
 
         target.delete()
-        return Response({"message": "User deleted successfully"}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "User deleted successfully"}, status=status.HTTP_200_OK
+        )
+
+
+# ---------------------------------------------------------------------------
+# User Access Logs
+# ---------------------------------------------------------------------------
+
+
+class UserAccessLogView(APIView):
+    def get(self, request):
+        user = get_user_from_request(request)
+        if not user:
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        logs = user.access_logs.all()[:50]
+        data = [
+            {
+                "id": log.id,
+                "action": log.action,
+                "status": log.status,
+                "ip_address": log.ip_address,
+                "device": _parse_user_agent(log.user_agent),
+                "timestamp": log.timestamp.isoformat(),
+            }
+            for log in logs
+        ]
+        return Response(data)
 
 
 # ---------------------------------------------------------------------------
 # Timesheet Reminder – manual trigger endpoint
 # ---------------------------------------------------------------------------
+
 
 class TimesheetReminderView(APIView):
     """
@@ -2074,28 +2779,149 @@ class TimesheetReminderView(APIView):
     Admin-only manual trigger for the same logic the cron job runs automatically
     on the 18th of each month at 18:00.
     """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
         requesting_user = get_user_from_request(request)
-        if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
-            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+        if not requesting_user or not (
+            requesting_user.is_staff or requesting_user.is_superuser
+        ):
+            return Response(
+                {"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN
+            )
 
         try:
-            from core_app.management.commands.send_timesheet_reminders import send_reminders
-            dry_run = request.data.get('dry_run', False)
+            from core_app.management.commands.send_timesheet_reminders import (
+                send_reminders,
+            )
+
+            dry_run = request.data.get("dry_run", False)
             result = send_reminders(dry_run=bool(dry_run))
-            return Response({
-                "status": "success",
-                "message": (
-                    f"Reminder run complete — "
-                    f"sent: {result['emails_sent']}, "
-                    f"skipped (no missing days): {result['emails_skipped']}, "
-                    f"failed: {result['emails_failed']}"
-                ),
-                **result,
-            })
+            return Response(
+                {
+                    "status": "success",
+                    "message": (
+                        f"Reminder run complete — "
+                        f"sent: {result['emails_sent']}, "
+                        f"skipped (no missing days): {result['emails_skipped']}, "
+                        f"failed: {result['emails_failed']}"
+                    ),
+                    **result,
+                }
+            )
         except Exception as e:
             logger.error(f"Timesheet reminder trigger error: {str(e)}")
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
+class AdminDashboardStatsView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        requesting_user = get_user_from_request(request)
+        if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
+            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+        
+        from django.db.models.functions import ExtractMonth, ExtractYear
+        total_timesheets = Timesheet.objects.annotate(
+            year=ExtractYear('date'),
+            month=ExtractMonth('date')
+        ).values('user_project__user', 'year', 'month').distinct().count()
+        
+        active_projects = Project.objects.count()
+        return Response({
+            "timesheets_submitted": total_timesheets,
+            "active_projects": active_projects
+        })
+
+class AdminRecentActivityView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        requesting_user = get_user_from_request(request)
+        if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
+            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+        
+        from .models import UserAccessLog, TimesheetEmailLog, PPTGenerationLog
+        
+        activities = []
+        
+        access_logs = UserAccessLog.objects.select_related("user").order_by("-timestamp")[:5]
+        for log in access_logs:
+            icon = "bi bi-check-circle-fill" if log.status == "success" else "bi bi-exclamation-triangle-fill"
+            iconClass = "activity-icon--green" if log.status == "success" else "activity-icon--amber"
+            action_text = "logged in" if log.action == "login" else log.action.replace("_", " ")
+            text = f"<strong>{log.user.name}</strong> {action_text} ({log.status})"
+            activities.append({
+                "icon": icon,
+                "iconClass": iconClass,
+                "text": text,
+                "time": log.timestamp.isoformat(),
+                "type": "System Access",
+                "timestamp_obj": log.timestamp
+            })
+            
+        email_logs = TimesheetEmailLog.objects.select_related("recipient").order_by("-sent_at")[:5]
+        for log in email_logs:
+            icon = "bi bi-envelope-check-fill" if log.status == "success" else "bi bi-envelope-exclamation-fill"
+            iconClass = "activity-icon--purple" if log.status == "success" else "activity-icon--amber"
+            recipient_name = log.recipient.name if log.recipient else "Unknown"
+            text = f"Automated timesheet email sent to <strong>{recipient_name}</strong> for {log.project_name}"
+            activities.append({
+                "icon": icon,
+                "iconClass": iconClass,
+                "text": text,
+                "time": log.sent_at.isoformat(),
+                "type": "Automated Email",
+                "timestamp_obj": log.sent_at
+            })
+            
+        ppt_logs = PPTGenerationLog.objects.select_related("created_by").order_by("-created_at")[:5]
+        for log in ppt_logs:
+            creator_name = log.created_by.name if log.created_by else "System"
+            text = f"<strong>{creator_name}</strong> generated Anniversary Slides for {log.employee_name}"
+            activities.append({
+                "icon": "bi bi-easel2-fill",
+                "iconClass": "activity-icon--blue",
+                "text": text,
+                "time": log.created_at.isoformat(),
+                "type": "PPT Generation",
+                "timestamp_obj": log.created_at
+            })
+            
+        activities.sort(key=lambda x: x["timestamp_obj"], reverse=True)
+        top_activities = activities[:5]
+        
+        for act in top_activities:
+            del act["timestamp_obj"]
+            
+        return Response(top_activities)
+
+class AdminUpcomingAnniversariesView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        requesting_user = get_user_from_request(request)
+        if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
+            return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
+        
+        from datetime import date
+        today = date.today()
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        users = User.objects.filter(date_of_joining__month=today.month, is_active=True)
+        
+        anniversaries = []
+        for user in users:
+            years = today.year - user.date_of_joining.year
+            if years > 0:
+                anniversaries.append({
+                    "name": f"{user.first_name} {user.last_name}".strip() or user.name,
+                    "years": f"{years} Years",
+                    "date": user.date_of_joining.strftime("%b %d"),
+                    "day_of_month": user.date_of_joining.day
+                })
+                
+        anniversaries.sort(key=lambda x: x["day_of_month"])
+        return Response(anniversaries)

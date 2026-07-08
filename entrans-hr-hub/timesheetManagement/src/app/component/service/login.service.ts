@@ -34,4 +34,13 @@ createUser(data: any): Observable<any> {
 changePassword(data: any): Observable<any> {
   return this.http.post(`${this.baseUrl}/change-password/`, data)
 }
+getMyProfile(): Observable<any> {
+  return this.http.get(`${this.baseUrl}/me/`)
+}
+updateProfile(data: any): Observable<any> {
+  return this.http.put(`${this.baseUrl}/me/`, data)
+}
+getAccessLogs(): Observable<any> {
+  return this.http.get(`${this.baseUrl}/access-logs/`)
+}
 }

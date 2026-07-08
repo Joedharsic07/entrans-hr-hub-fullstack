@@ -1,94 +1,125 @@
 <div class="flex flex-col md:flex-row h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
-  <!-- Decorative Background -->
-  <div
-    class="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none origin-top blur-3xl transform scale-150 z-0">
-  </div>
 
   <!-- Sidebar -->
-  <div
-    class="hidden md:block md:w-72 bg-white border-r border-slate-200 relative z-20 flex-shrink-0">
+  <div class="hidden md:block md:w-72 bg-white border-r border-slate-200 relative z-20 flex-shrink-0">
     <app-sidebar></app-sidebar>
   </div>
 
-  <div class="main-content-wrapper">
-    <div class="mx-auto min-h-full flex flex-col justify-start">
+  <!-- Main Content Area -->
+  <div class="flex-1 overflow-y-auto">
+    <div class="w-full max-w-6xl mx-auto pb-12 pt-6 px-4 sm:px-6">
 
       <!-- Upload/Validation Form (shown when no results) -->
-      <div *ngIf="!result" class="flex-1 flex items-center justify-center">
-        <div
-          class="bg-white rounded-xl shadow-sm w-full p-5 sm:p-7 border border-slate-200/60 relative overflow-hidden">
+      <div *ngIf="!result">
+        
+        <!-- Hero Header -->
+        <div class="bg-[#0f2d5c] rounded-2xl p-8 sm:p-10 mb-8 shadow-sm text-white relative overflow-hidden flex flex-col justify-center min-h-[220px]">
+          <!-- Decorative Background Icons -->
+          <div class="absolute right-8 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none hidden md:flex items-center gap-2">
+            <i class="bi bi-clock-history text-[120px]"></i>
+          </div>
+          <div class="absolute left-8 top-1/2 -translate-y-1/2 opacity-10 pointer-events-none hidden md:flex items-center gap-2">
+            <i class="bi bi-calendar-check text-[120px]"></i>
+          </div>
+          <div class="relative z-10 max-w-3xl">
+            <h1 class="text-3xl sm:text-4xl font-bold mb-3 tracking-tight">Timesheet Validation</h1>
+            <p class="text-blue-100 text-sm sm:text-base max-w-2xl leading-relaxed">
+              Upload your timesheet Excel file to automatically validate tracking issues and errors. Ensure your data is compliant before final submission.
+            </p>
+          </div>
+        </div>
 
-          <div class="absolute top-0 left-0 right-0 h-1 bg-primary"></div>
-
-          <!-- Header with Icon -->
-          <div class="flex flex-col items-center mb-5 text-center">
-            <div
-              class="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 mb-3">
-              <i class="bi bi-cloud-arrow-up text-primary text-2xl"></i>
-            </div>
-            <h1 class="text-xl font-extrabold text-slate-900 tracking-tight mb-1">Timesheet Validation</h1>
-            <p class="text-slate-500 font-medium text-sm max-w-sm mx-auto">Upload your timesheet Excel file to automatically validate tracking issues and errors.</p>
+        <!-- Main Upload Card -->
+        <div class="bg-white rounded-3xl shadow-sm p-8 sm:p-12 mb-8 max-w-4xl mx-auto w-full border border-slate-200">
+          <div class="text-center mb-8">
+            <h2 class="text-2xl font-bold text-slate-800">Select Excel File</h2>
+            <p class="text-slate-500 text-sm mt-2 font-medium">Supported formats: .xlsx, .xls</p>
           </div>
 
-          <!-- Upload Card -->
-          <div
-            class="bg-slate-50 rounded-2xl p-6 sm:p-8 border-2 border-dashed border-slate-300 hover:border-primary/50 hover:bg-slate-100/50 transition-all duration-300 group">
-            <form (ngSubmit)="onSubmit()" enctype="multipart/form-data">
-              <div class="space-y-6">
-                <!-- File Upload Section -->
-                <div>
-                  <label for="timesheetFile"
-                    class="block text-base font-bold text-slate-700 mb-3 text-center sm:text-left">
-                    <span class="text-primary">Select Excel File</span>
-                  </label>
-
-                  <div class="flex flex-col sm:flex-row items-center gap-4">
-                    <label class="flex-1 w-full cursor-pointer relative group/input">
-                      <input type="file" id="timesheetFile" (change)="onFileSelected($event)" accept=".xlsx,.xls"
-                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                      <div
-                        class="flex items-center justify-between px-4 py-3.5 bg-white rounded-xl border border-slate-200 group-hover/input:border-primary/50 group-hover/input:ring-4 group-hover/input:ring-primary/10 transition-all shadow-sm">
-                        <span class="text-sm font-semibold pr-4"
-                          [ngClass]="selectedFile ? 'text-primary truncate' : 'text-slate-400'">
-                          {{ selectedFile ? selectedFile.name : 'No file selected (.xlsx, .xls)' }}
-                        </span>
-                        <span
-                          class="px-4 py-1.5 bg-slate-100 text-slate-700 font-bold text-sm rounded-lg group-hover/input:bg-primary/15 group-hover/input:text-primary transition-colors pointer-events-none whitespace-nowrap">Browse</span>
-                      </div>
-                    </label>
-                    <button type="submit" [disabled]="!selectedFile"
-                      class="w-full sm:w-auto px-8 py-3.5 bg-primary hover:bg-primary-hover disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-4 focus:ring-primary/20">
-                      <i class="bi bi-file-earmark-check"></i>
-                      Validate
-                    </button>
-                  </div>
-
-                  <div
-                    class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-slate-500 font-medium bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-                    <div class="flex items-center gap-2 text-slate-600">
-                      <i class="bi bi-info-circle text-primary text-base"></i>
-                      <span>Requires valid timesheet format.</span>
-                    </div>
-                    <a href="/assets/sample_template.xlsx" download
-                      class="inline-flex items-center gap-1.5 text-primary hover:text-primary-hover font-bold transition-colors">
-                      <i class="bi bi-download"></i>
-                      Download Template
-                    </a>
-                  </div>
-                </div>
+          <form (ngSubmit)="onSubmit()" enctype="multipart/form-data">
+            <div class="border-2 border-dashed border-slate-300 rounded-2xl p-10 flex flex-col items-center justify-center hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer relative mb-8 group">
+              <input type="file" id="timesheetFile" (change)="onFileSelected($event)" accept=".xlsx,.xls"
+                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+              
+              <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <i class="bi bi-file-earmark-arrow-up-fill text-blue-600 text-2xl"></i>
               </div>
-            </form>
+
+              <div class="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-4 w-full max-w-md group-hover:bg-white group-hover:border-blue-300 transition-colors">
+                <span class="flex-1 text-sm font-semibold truncate text-center"
+                  [ngClass]="selectedFile ? 'text-blue-700' : 'text-slate-400'">
+                  {{ selectedFile ? selectedFile.name : 'No file selected (.xlsx, .xls)' }}
+                </span>
+                <span class="px-5 py-2 bg-white border border-slate-200 text-slate-700 font-bold text-sm rounded-lg shadow-sm">Browse</span>
+              </div>
+
+              <p class="text-slate-400 text-sm font-medium">or drag and drop your file here</p>
+            </div>
+
+            <div class="flex justify-center mb-10">
+              <button type="submit" [disabled]="!selectedFile || isLoading"
+                class="px-10 py-3.5 bg-[#1e3a8a] hover:bg-blue-900 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none text-white font-bold text-base rounded-xl shadow-md transition-all flex items-center justify-center gap-3 cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-900/20 w-full max-w-md">
+                <ng-container *ngIf="!isLoading">
+                  <i class="bi bi-check2-circle text-xl"></i>
+                  Validate Timesheet
+                </ng-container>
+                <ng-container *ngIf="isLoading">
+                  <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Validating...
+                </ng-container>
+              </button>
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-slate-100">
+              <div class="flex items-center gap-2 text-slate-500 font-medium text-sm">
+                <i class="bi bi-info-circle-fill text-blue-500 text-lg"></i>
+                <span>Requires valid timesheet format.</span>
+              </div>
+              <a href="/assets/sample_template.xlsx" download
+                class="inline-flex items-center gap-2 text-[#0f2d5c] hover:text-blue-700 font-bold transition-colors text-sm">
+                <i class="bi bi-download text-lg"></i>
+                Download Template
+              </a>
+            </div>
+          </form>
+        </div>
+
+        <!-- Feature Cards at the bottom -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-8">
+          <!-- Card 1 -->
+          <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center mb-5 text-lg">1</div>
+            <h3 class="text-lg font-bold text-slate-800 mb-3">Upload</h3>
+            <p class="text-slate-500 text-sm font-medium leading-relaxed">Select your weekly or monthly excel timesheet export.</p>
+          </div>
+          <!-- Card 2 -->
+          <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center mb-5 text-lg">2</div>
+            <h3 class="text-lg font-bold text-slate-800 mb-3">Analyze</h3>
+            <p class="text-slate-500 text-sm font-medium leading-relaxed">Our system checks for overlapping hours and missing project codes.</p>
+          </div>
+          <!-- Card 3 -->
+          <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-700 font-bold flex items-center justify-center mb-5 text-lg">3</div>
+            <h3 class="text-lg font-bold text-slate-800 mb-3">Correct</h3>
+            <p class="text-slate-500 text-sm font-medium leading-relaxed">Receive a detailed report and make corrections if needed.</p>
           </div>
         </div>
       </div>
 
       <!-- Results Section (shown when results exist) -->
-      <div *ngIf="result" class="w-full">
+      <div *ngIf="result" class="w-full bg-white rounded-2xl shadow-sm p-6 lg:p-12 relative min-h-[500px] mt-6">
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-[#0A66C2] rounded-t-2xl"></div>
 
         <div class="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
           <div>
             <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Validation Results</h2>
-            <p class="text-slate-500 font-medium text-sm mt-1">Review flagged issues and aggregated hours across all users.</p>
+            <p class="text-slate-500 font-medium text-sm mt-1">Review flagged issues and aggregated hours across all
+              users.</p>
           </div>
           <button (click)="clearData()"
             class="group inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-700 font-bold shadow-sm hover:bg-slate-50 transition-colors focus:outline-none">
@@ -99,8 +130,7 @@
 
         <!-- Email Form Section -->
         <div class="mb-10 block">
-          <div
-            class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden lg:max-w-4xl">
+          <div class="bg-white rounded-2xl shadow-lg border border-slate-200/60 overflow-hidden lg:max-w-4xl">
             <div class="bg-red-50/50 border-b border-red-100 px-6 py-5">
               <h3 class="text-lg font-extrabold text-red-700 m-0 flex items-center gap-2">
                 <i class="bi bi-exclamation-triangle-fill"></i>
@@ -113,7 +143,8 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label for="emailInput" class="block text-sm font-bold text-slate-700 mb-2">Recipient Email Address</label>
+                    <label for="emailInput" class="block text-sm font-bold text-slate-700 mb-2">Recipient Email
+                      Address</label>
                     <input type="email" id="emailInput" formControlName="recipient_email"
                       class="block w-full bg-slate-50 border border-slate-200 rounded-lg py-3 px-4 text-slate-800 placeholder-slate-400 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
                       placeholder="manager@example.com" required>
@@ -143,7 +174,8 @@
                   <div class="flex-1">
                     <div *ngIf="message" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-bold"
                       [ngClass]="messageType === 'error' ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'">
-                      <i class="bi" [ngClass]="messageType === 'error' ? 'bi-x-circle-fill mr-2' : 'bi-check-circle-fill mr-2'"></i>
+                      <i class="bi"
+                        [ngClass]="messageType === 'error' ? 'bi-x-circle-fill mr-2' : 'bi-check-circle-fill mr-2'"></i>
                       {{ message }}
                     </div>
                   </div>
@@ -201,8 +233,7 @@
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-slate-100">
-                    <tr *ngFor="let row of validatedData[selectedUserName]"
-                      class="hover:bg-slate-50 transition-colors">
+                    <tr *ngFor="let row of validatedData[selectedUserName]" class="hover:bg-slate-50 transition-colors">
                       <td *ngFor="let key of getKeys(validatedData[selectedUserName][0])"
                         class="px-5 py-3 text-sm text-slate-600 whitespace-nowrap">
                         <span [ngClass]="{'font-bold text-slate-800': key.toLowerCase().includes('total')}">
@@ -216,7 +247,8 @@
               <ng-template #noData>
                 <div class="flex flex-col items-center justify-center p-12 h-full text-center">
                   <i class="bi bi-folder2-open text-4xl text-slate-300 mb-4"></i>
-                  <p class="text-slate-500 font-semibold text-lg">No detailed data found for {{ selectedUserName }}.</p>
+                  <p class="text-slate-500 font-semibold text-lg">No detailed data found for {{ selectedUserName }}.
+                  </p>
                 </div>
               </ng-template>
             </div>
@@ -242,8 +274,7 @@
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-slate-100">
-                    <tr *ngFor="let row of validationSummary; let i = index"
-                      class="hover:bg-slate-50 transition-colors"
+                    <tr *ngFor="let row of validationSummary; let i = index" class="hover:bg-slate-50 transition-colors"
                       [ngClass]="{'bg-slate-50 font-bold border-t-2 border-slate-200': i === validationSummary.length - 1}">
                       <td *ngFor="let key of getSummaryKeys()"
                         class="px-5 py-3 whitespace-nowrap text-sm text-slate-600">
@@ -286,7 +317,8 @@
 
         </div>
       </div>
-
+      
+      <app-footer></app-footer>
     </div>
   </div>
 </div>

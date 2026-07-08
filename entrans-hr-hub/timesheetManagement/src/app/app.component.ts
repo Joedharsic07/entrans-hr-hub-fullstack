@@ -30,11 +30,11 @@ export class AppComponent {
   showConfirmPwd = false;
 
   constructor(private router: Router, private loginService: LoginService) {
-    this.updateUserData();
+    this.updateUserData(true); // Fetch from API initially
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
-      this.updateUserData();
+      this.updateUserData(false);
       this.showSettingsDropdown = false;
     });
   }
@@ -44,7 +44,27 @@ export class AppComponent {
     this.showSettingsDropdown = false;
   }
 
-  updateUserData() {
+  updateUserData(fetchFromApi: boolean = false) {
+    if (fetchFromApi) {
+      const token = sessionStorage.getItem('accessToken');
+      if (token && this.shouldShowNavbar()) {
+        this.loginService.getMyProfile().subscribe({
+          next: (res) => {
+            this.userName = res.name;
+            this.userRole = res.role;
+            sessionStorage.setItem('name', res.name);
+            sessionStorage.setItem('role', res.role);
+          },
+          error: () => {
+            this.userName = sessionStorage.getItem('name');
+            this.userRole = sessionStorage.getItem('role');
+          }
+        });
+        return;
+      }
+    }
+
+    // Default fallback to session storage for rapid route changes
     this.userName = sessionStorage.getItem('name');
     this.userRole = sessionStorage.getItem('role');
   }

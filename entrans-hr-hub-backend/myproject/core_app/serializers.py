@@ -7,28 +7,52 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from django.core import exceptions
 
+
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        token['user_id'] = user.id
-        token['type'] = 'access'
-        token['jti'] = str(uuid4())
+        token["user_id"] = user.id
+        token["type"] = "access"
+        token["jti"] = str(uuid4())
         return token
+
 
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from .models import PPTGenerationLog
 
 User = get_user_model()
 
+
+class PPTGenerationLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PPTGenerationLog
+        fields = ["id", "employee_name", "years_of_service", "created_at", "created_by"]
+        read_only_fields = ["created_at", "created_by"]
+
+
 class UserSerializer(serializers.ModelSerializer):
-    role = serializers.SerializerMethodField() 
-    
+    role = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ('id', 'user_id', 'name', 'first_name', 'last_name', 'designation', 'email', 'password', 'role', 'is_active')  
+        fields = (
+            "id",
+            "user_id",
+            "name",
+            "first_name",
+            "last_name",
+            "designation",
+            "email",
+            "password",
+            "role",
+            "is_active",
+            "password_changed_at",
+        )
         extra_kwargs = {
-            'password': {'write_only': True}
+            "password": {"write_only": True},
+            "password_changed_at": {"read_only": True},
         }
 
     def get_role(self, obj):
@@ -37,53 +61,76 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Maintain existing password hashing functionality"""
+        name = validated_data["name"]
+        parts = name.strip().split(" ", 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+
         user = User.objects.create_user(
-            email=validated_data['email'],
-            name=validated_data['name'],
-            password=validated_data['password']
+            email=validated_data["email"],
+            name=name,
+            password=validated_data["password"],
         )
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
         return user
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(write_only=True, required=True)
-    
+
     class Meta:
         model = User
-        fields = ['name', 'email', 'password', 'confirm_password']
+        fields = ["name", "email", "password", "confirm_password", "date_of_joining"]
         extra_kwargs = {
-            'password': {'write_only': True},
-            'email': {'required': True},
-            'name': {'required': True}
+            "password": {"write_only": True},
+            "email": {"required": True},
+            "name": {"required": True},
+            "date_of_joining": {"required": False},
         }
 
     def validate(self, data):
         # Check passwords match
-        if data['password'] != data['confirm_password']:
+        if data["password"] != data["confirm_password"]:
             raise serializers.ValidationError({"password": "Passwords do not match"})
-        
+
         # Validate password strength
         try:
-            validate_password(data['password'])
+            validate_password(data["password"])
         except exceptions.ValidationError as e:
-            raise serializers.ValidationError({'password': list(e.messages)})
-        
+            raise serializers.ValidationError({"password": list(e.messages)})
+
         # Check unique constraints
-        if User.objects.filter(email=data['email']).exists():
-            raise serializers.ValidationError({"email": "This email is already registered"})
-            
-        if User.objects.filter(name=data['name']).exists():
-            raise serializers.ValidationError({"name": "This username is already taken"})
-            
+        if User.objects.filter(email=data["email"]).exists():
+            raise serializers.ValidationError(
+                {"email": "This email is already registered"}
+            )
+
+        if User.objects.filter(name=data["name"]).exists():
+            raise serializers.ValidationError(
+                {"name": "This username is already taken"}
+            )
+
         return data
 
     def create(self, validated_data):
-        validated_data.pop('confirm_password')
+        validated_data.pop("confirm_password")
+        name = validated_data["name"]
+        parts = name.strip().split(" ", 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+
         user = User.objects.create_user(
-            name=validated_data['name'],
-            email=validated_data['email'],
-            password=validated_data['password']
+            name=name,
+            email=validated_data["email"],
+            password=validated_data["password"],
         )
+        user.first_name = first_name
+        user.last_name = last_name
+        user.save()
         return user
+
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -94,39 +141,43 @@ class LoginSerializer(serializers.Serializer):
         return UserSerializer(obj).data
 
     def validate(self, data):
-        email = data.get('email')
-        password = data.get('password')
-        
+        email = data.get("email")
+        password = data.get("password")
+
         user = authenticate(email=email, password=password)
         if not user:
             raise serializers.ValidationError("Invalid credentials")
-        
-        data['user'] = user
+
+        data["user"] = user
         return data
+
 
 class ProjectSerializer(serializers.ModelSerializer):
     owner_name = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Project
-        fields = ('id', 'name', 'description', 'owner', 'owner_name')
-        extra_kwargs = {'owner': {'required': False}} 
+        fields = ("id", "name", "description", "owner", "owner_name")
+        extra_kwargs = {"owner": {"required": False}}
+
     def get_owner_name(self, obj):
         return obj.owner.name if obj.owner else None
+
 
 class UserProjectSerializer(serializers.ModelSerializer):
     user_name = serializers.SerializerMethodField()
     project_name = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = UserProject
-        fields = ('id', 'user', 'project', 'user_name', 'project_name','role')
-        
+        fields = ("id", "user", "project", "user_name", "project_name", "role")
+
     def get_user_name(self, obj):
         return obj.user.name if obj.user else None
-        
+
     def get_project_name(self, obj):
         return obj.project.name if obj.project else None
+
 
 class TimesheetSerializer(serializers.ModelSerializer):
     user_name = serializers.SerializerMethodField()
@@ -138,45 +189,71 @@ class TimesheetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Timesheet
         fields = (
-            'id', 'user_project', 'date', 'task_name', 'description',
-            'duration', 'work_type', 'user_name', 'project_name', 'leave_day_value'
+            "id",
+            "user_project",
+            "date",
+            "task_name",
+            "description",
+            "duration",
+            "work_type",
+            "user_name",
+            "project_name",
+            "leave_day_value",
         )
 
     def get_user_name(self, obj):
-        return obj.user_project.user.name if obj.user_project and obj.user_project.user else None
+        return (
+            obj.user_project.user.name
+            if obj.user_project and obj.user_project.user
+            else None
+        )
 
     def get_project_name(self, obj):
-        return obj.user_project.project.name if obj.user_project and obj.user_project.project else None
+        return (
+            obj.user_project.project.name
+            if obj.user_project and obj.user_project.project
+            else None
+        )
 
     def get_leave_day_value(self, obj):
-        if obj.work_type == 'full_day_leave':
+        if obj.work_type == "full_day_leave":
             return 1.0
-        elif obj.work_type == 'half_day_leave':
+        elif obj.work_type == "half_day_leave":
             return 0.5
         return 0.0
 
     def validate(self, attrs):
-        work_type = attrs.get('work_type')
+        work_type = attrs.get("work_type")
 
-        if work_type not in ['full_day_leave', 'half_day_leave']:
-            if not attrs.get('task_name'):
-                raise serializers.ValidationError({'task_name': 'This field is required for work entries.'})
-            if attrs.get('duration') in (None, ''):
-                raise serializers.ValidationError({'duration': 'This field is required for work entries.'})
+        if work_type not in ["full_day_leave", "half_day_leave"]:
+            if not attrs.get("task_name"):
+                raise serializers.ValidationError(
+                    {"task_name": "This field is required for work entries."}
+                )
+            if attrs.get("duration") in (None, ""):
+                raise serializers.ValidationError(
+                    {"duration": "This field is required for work entries."}
+                )
         return attrs
+
 
 class UploadExcelSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=100)
     years = serializers.CharField(max_length=100)
     file = serializers.FileField()
 
+
 class UploadTimesheetSerializer(serializers.Serializer):
     timesheet_file = serializers.FileField()
-    validation_type = serializers.CharField(max_length=20, required=False, default='standard')
+    validation_type = serializers.CharField(
+        max_length=20, required=False, default="standard"
+    )
+
 
 class GenerateTemplateSerializer(serializers.Serializer):
     month = serializers.IntegerField(required=False)
     year = serializers.IntegerField(required=False)
+
 
 class EmailSerializer(serializers.Serializer):
     recipient_email = serializers.EmailField()

@@ -24,6 +24,7 @@ export class CreateUserComponent {
       last_name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       designation: [''],
+      date_of_joining: [''],
       role: ['user', Validators.required]
     });
   }

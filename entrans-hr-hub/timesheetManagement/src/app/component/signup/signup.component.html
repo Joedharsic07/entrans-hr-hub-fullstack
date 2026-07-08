@@ -1,61 +1,125 @@
-<div class="min-h-screen bg-slate-100 flex items-center justify-center font-sans antialiased text-slate-800 p-4 sm:p-8">
+<div class="min-h-screen w-full flex flex-col-reverse lg:flex-row font-sans antialiased text-slate-800">
 
-  <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 shadow-2xl rounded-3xl overflow-hidden">
-
-    <!-- Left Panel: Form -->
-    <div class="bg-white flex flex-col p-8 sm:p-12">
-
+  <!-- Left Panel: Branding & Marketing -->
+  <div class="w-full lg:w-[45%] bg-blue-900 relative flex flex-col p-8 sm:p-12 lg:p-16 overflow-hidden min-h-[400px] lg:h-screen">
+    
+    <!-- Background Gradient & Overlay -->
+    <div class="absolute inset-0 bg-gradient-to-br from-blue-800 to-[#0a2540] opacity-90"></div>
+    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 32px 32px;"></div>
+    
+    <div class="relative z-10 flex flex-col h-full">
       <!-- Logo -->
-      <div class="flex items-center gap-3 mb-10">
-        <img src="/assets/logo.png" alt="Entrans Logo" class="h-10 w-auto" />
-        <div class="h-5 w-px bg-slate-200"></div>
-        <span class="text-slate-500 font-semibold text-xs tracking-widest uppercase">HR Hub Elite</span>
+      <div class="flex items-center gap-3 mb-auto">
+        <div class="bg-white/90 p-1.5 rounded-lg inline-flex backdrop-blur-sm">
+          <img src="/assets/logo.png" alt="Entrans Logo" class="h-8 sm:h-10 w-auto drop-shadow-sm mix-blend-multiply" />
+        </div>
+        <div class="h-5 w-px bg-blue-400/50 hidden sm:block"></div>
+        <span class="text-blue-100 font-bold text-xs tracking-widest uppercase hidden sm:block">HR Hub Elite</span>
       </div>
 
+      <!-- Main Copy -->
+      <div class="my-12">
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-white leading-tight mb-6 tracking-tight">
+          Empower your<br />Global Workforce.
+        </h1>
+        <p class="text-blue-100 text-sm sm:text-base max-w-md leading-relaxed mb-10 opacity-90">
+          Experience the next generation of human resource management with high-density data analytics and frictionless employee workflows.
+        </p>
+
+        <!-- Social Proof / Avatars -->
+        <div class="flex items-center gap-4">
+          <div class="flex -space-x-3">
+            <div class="w-10 h-10 rounded-full border-2 border-blue-900 bg-slate-300 flex items-center justify-center overflow-hidden"><i class="bi bi-person-fill text-slate-500 text-lg"></i></div>
+            <div class="w-10 h-10 rounded-full border-2 border-blue-900 bg-slate-400 flex items-center justify-center overflow-hidden"><i class="bi bi-person-fill text-slate-100 text-lg"></i></div>
+            <div class="w-10 h-10 rounded-full border-2 border-blue-900 bg-slate-200 flex items-center justify-center overflow-hidden"><i class="bi bi-person-fill text-slate-500 text-lg"></i></div>
+          </div>
+          <span class="text-blue-200 text-xs font-medium">Join 500+ elite enterprises globally</span>
+        </div>
+      </div>
+
+      <!-- Footer Copyright -->
+      <div class="mt-auto text-blue-300/60 text-xs font-medium">
+        © 2024 HR HUB ELITE EDITION. All rights reserved.
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel: Form -->
+  <div class="w-full lg:w-[55%] bg-[#f4f7fb] h-screen overflow-y-auto flex flex-col px-6 sm:px-12 py-10 relative">
+    
+    <!-- Soft top glow -->
+    <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-white rounded-full blur-[100px] pointer-events-none opacity-80"></div>
+    
+    <div class="flex-1 flex flex-col justify-center max-w-[460px] w-full mx-auto relative z-10 my-8">
+      
       <!-- Heading -->
-      <div class="mb-8">
-        <h1 class="page-title mb-1">Create Account</h1>
-        <p class="text-slate-500 text-sm">Join HR Hub Elite to manage your timesheets easily.</p>
+      <div class="mb-10">
+        <h2 class="text-3xl font-bold text-slate-900 mb-2">Create an account</h2>
+        <p class="text-slate-600 text-sm">Start managing your elite workforce today.</p>
       </div>
 
-      <form [formGroup]="signupForm" class="space-y-4">
-
-        <!-- User Name Field -->
+      <!-- Form -->
+      <form [formGroup]="signupForm" class="space-y-5">
+        
+        <!-- User Name -->
         <div>
-          <label for="user" class="label-text">User Name</label>
-          <input type="text" formControlName="name"
-            class="form-input"
-            placeholder="Enter Name" />
+          <label for="name" class="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">User Name</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="bi bi-person text-lg"></i>
+            </div>
+            <input type="text" id="name" formControlName="name"
+              class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-lg text-sm transition-all focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none placeholder:text-slate-400 shadow-sm"
+              placeholder="John Doe" />
+          </div>
         </div>
 
-        <!-- Email Field -->
+        <!-- Date of Joining -->
         <div>
-          <label for="email" class="label-text">Email Address</label>
-          <input type="email" formControlName="email"
-            class="form-input"
-            placeholder="name@company.com" />
+          <label for="date_of_joining" class="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Date of Joining</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="bi bi-calendar text-lg"></i>
+            </div>
+            <input type="date" id="date_of_joining" formControlName="date_of_joining"
+              class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-lg text-sm transition-all focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none placeholder:text-slate-400 shadow-sm" />
+          </div>
+        </div>
+
+        <!-- Email Address -->
+        <div>
+          <label for="email" class="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Email Address</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="bi bi-envelope text-lg"></i>
+            </div>
+            <input type="email" id="email" formControlName="email"
+              class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-lg text-sm transition-all focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none placeholder:text-slate-400 shadow-sm"
+              placeholder="john@company.com" />
+          </div>
           <div class="mt-1.5 space-y-1" *ngIf="signupForm.get('email')?.touched && signupForm.get('email')?.invalid">
-            <small class="text-red-500 font-semibold text-xs flex items-center gap-1"
-              *ngIf="signupForm.get('email')?.errors?.['required']">
+            <small class="text-red-500 font-semibold text-xs flex items-center gap-1" *ngIf="signupForm.get('email')?.errors?.['required']">
               <i class="bi bi-exclamation-circle-fill"></i> Email is required.
             </small>
-            <small class="text-red-500 font-semibold text-xs flex items-center gap-1"
-              *ngIf="signupForm.get('email')?.errors?.['email']">
+            <small class="text-red-500 font-semibold text-xs flex items-center gap-1" *ngIf="signupForm.get('email')?.errors?.['email']">
               <i class="bi bi-exclamation-circle-fill"></i> Invalid email format.
             </small>
           </div>
         </div>
 
-        <!-- Password Field -->
+        <!-- Password -->
         <div>
-          <label for="password" class="label-text">Password</label>
+          <label for="password" class="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Password</label>
           <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="bi bi-lock text-lg"></i>
+            </div>
             <input [type]="isPasswordVisible ? 'text' : 'password'" id="password" formControlName="password"
-              class="form-input pr-11"
+              class="block w-full pl-11 pr-12 py-3 bg-white border border-slate-200 rounded-lg text-sm transition-all focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none placeholder:text-slate-400 shadow-sm"
               placeholder="••••••••" />
             <button type="button" (click)="isPasswordVisible = !isPasswordVisible"
-              class="absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
-              <i class="bi" [ngClass]="isPasswordVisible ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+              class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none transition-colors">
+              <i class="bi text-lg" [ngClass]="isPasswordVisible ? 'bi-eye-slash' : 'bi-eye'"></i>
             </button>
           </div>
           <div class="mt-1.5 space-y-1" *ngIf="signupForm.get('password')?.touched && signupForm.get('password')?.invalid">
@@ -66,17 +130,19 @@
           </div>
         </div>
 
-        <!-- Confirm Password Field -->
+        <!-- Confirm Password -->
         <div>
-          <label for="confirm_password" class="label-text">Confirm Password</label>
+          <label for="confirm_password" class="block text-[11px] font-bold text-slate-600 uppercase tracking-widest mb-2">Confirm Password</label>
           <div class="relative">
-            <input [type]="isconfirm_passwordVisible ? 'text' : 'password'" id="confirm_password"
-              formControlName="confirm_password"
-              class="form-input pr-11"
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i class="bi bi-shield-check text-lg"></i>
+            </div>
+            <input [type]="isconfirm_passwordVisible ? 'text' : 'password'" id="confirm_password" formControlName="confirm_password"
+              class="block w-full pl-11 pr-12 py-3 bg-white border border-slate-200 rounded-lg text-sm transition-all focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none placeholder:text-slate-400 shadow-sm"
               placeholder="••••••••" />
             <button type="button" (click)="isconfirm_passwordVisible = !isconfirm_passwordVisible"
-              class="absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
-              <i class="bi" [ngClass]="isconfirm_passwordVisible ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+              class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none transition-colors">
+              <i class="bi text-lg" [ngClass]="isconfirm_passwordVisible ? 'bi-eye-slash' : 'bi-eye'"></i>
             </button>
           </div>
           <div class="mt-1.5 space-y-1" *ngIf="signupForm.get('confirm_password')?.touched && signupForm.get('confirm_password')?.invalid">
@@ -88,13 +154,24 @@
           </div>
         </div>
 
+        <!-- Checkbox -->
+        <div class="pt-2">
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" class="w-4 h-4 mt-0.5 rounded border-slate-300 text-blue-700 focus:ring-blue-700 cursor-pointer">
+            <span class="text-xs text-slate-600 leading-snug">
+              I agree to the <a href="#" class="text-blue-700 hover:underline font-semibold">Terms of Service</a> and <a href="#" class="text-blue-700 hover:underline font-semibold">Privacy Policy</a>.
+            </span>
+          </label>
+        </div>
+
         <!-- Submit Button -->
         <div class="pt-4">
           <button type="submit" (click)="submit()" [disabled]="!signupForm.valid || isLoading || !passwordsMatch"
-            class="btn btn-primary btn-lg w-full">
+            class="w-full py-3.5 bg-[#0a58ca] hover:bg-blue-800 text-white text-base font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
             <span *ngIf="!isLoading">Create Account</span>
+            <i *ngIf="!isLoading" class="bi bi-arrow-right"></i>
             <span *ngIf="isLoading" class="flex items-center gap-2">
-              <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
@@ -105,21 +182,25 @@
 
       </form>
 
-      <div class="mt-8 pt-6 border-t border-slate-100 text-center">
-        <p class="text-sm text-slate-500">
+      <!-- Login Link -->
+      <div class="mt-12 text-center">
+        <p class="text-sm text-slate-600">
           Already have an account?
-          <a href="/login" class="font-bold text-primary hover:text-primary-hover hover:underline focus:outline-none transition-colors">Login</a>
+          <a routerLink="/login" class="font-bold text-[#0a58ca] hover:text-blue-900 hover:underline transition-colors ml-1">Login</a>
         </p>
+      </div>
+      
+      <!-- Footer Badges -->
+      <div class="mt-16 flex items-center justify-center gap-6 text-slate-400 text-xs font-semibold pb-4">
+        <div class="flex items-center gap-1.5">
+          <i class="bi bi-shield-check text-sm"></i> SSO Ready
+        </div>
+        <div class="flex items-center gap-1.5">
+          <i class="bi bi-globe2 text-sm"></i> Multi-region
+        </div>
       </div>
 
     </div>
 
-    <!-- Right Panel: Image — same height as form card -->
-    <div class="hidden lg:block relative overflow-hidden">
-      <img src="/assets/loginLogo.png" alt="Sign Up Illustration"
-        class="absolute inset-0 w-full h-full object-cover" />
-    </div>
-
   </div>
-
 </div>

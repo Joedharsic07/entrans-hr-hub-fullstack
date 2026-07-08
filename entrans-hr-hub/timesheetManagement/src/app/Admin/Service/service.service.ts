@@ -8,10 +8,10 @@ import { Observable } from 'rxjs';
 })
 export class ServiceService {
 
-  constructor(private httpClient:HttpClient) { }
-  baseUrl:string = environment.apiUrl;
-  timesheetValidation(File:any): Observable<any>{
-    return this.httpClient.post(`${this.baseUrl}/time-tracking/validation/`,File)
+  constructor(private httpClient: HttpClient) { }
+  baseUrl: string = environment.apiUrl;
+  timesheetValidation(File: any): Observable<any> {
+    return this.httpClient.post(`${this.baseUrl}/time-tracking/validation/`, File)
   }
   sendValidationEmail(emailData: any) {
     return this.httpClient.post(`${this.baseUrl}/time-tracking/send-email/`, emailData);
@@ -20,8 +20,8 @@ export class ServiceService {
     return this.httpClient.post(`${this.baseUrl}/ppt-automation/`, formData, {
       responseType: 'blob'
     });
-}
-  userTimesheetlist(){
+  }
+  userTimesheetlist() {
     return this.httpClient.get(`${this.baseUrl}/user-timesheets/`)
   }
   createProject(projectData: any): Observable<any> {
@@ -31,13 +31,13 @@ export class ServiceService {
     return this.httpClient.get(`${this.baseUrl}/users/`);
   }
   getUserProjects(month: string, year: string): Observable<any> {
-  return this.httpClient.get(`${this.baseUrl}/validate-multiple-timesheets/`, {
-    params: {
-      month,
-      year
-    }
-  });
-}
+    return this.httpClient.get(`${this.baseUrl}/validate-multiple-timesheets/`, {
+      params: {
+        month,
+        year
+      }
+    });
+  }
   validationTimesheet(validationData: any): Observable<any> {
     return this.httpClient.post(`${this.baseUrl}/validate-multiple-timesheets/`, validationData);
   }
@@ -78,6 +78,10 @@ export class ServiceService {
     return this.httpClient.patch(`${this.baseUrl}/admin-users/${userId}/`, { is_active: isActive });
   }
 
+  editAdminUser(userId: number, data: any): Observable<any> {
+    return this.httpClient.patch(`${this.baseUrl}/admin-users/${userId}/`, data);
+  }
+
   deleteAdminUser(userId: number): Observable<any> {
     return this.httpClient.delete(`${this.baseUrl}/admin-users/${userId}/`);
   }
@@ -86,4 +90,19 @@ export class ServiceService {
     return this.httpClient.post(`${this.baseUrl}/send-timesheet-reminders/`, { dry_run: dryRun });
   }
 
+  getRecentPpts(): Observable<any> {
+    return this.httpClient.get(`${this.baseUrl}/ppt-automation/`);
+  }
+
+  getAdminDashboardStats(): Observable<any> {
+    return this.httpClient.get(`${this.baseUrl}/admin-dashboard-stats/`);
+  }
+
+  getAdminRecentActivity(): Observable<any> {
+    return this.httpClient.get(`${this.baseUrl}/admin-recent-activity/`);
+  }
+
+  getAdminUpcomingAnniversaries(): Observable<any> {
+    return this.httpClient.get(`${this.baseUrl}/admin-upcoming-anniversaries/`);
+  }
 }

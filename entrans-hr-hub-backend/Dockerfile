@@ -10,6 +10,12 @@ COPY . .
 
 WORKDIR /app/myproject
 
-EXPOSE 8000
+# Collect static files
+RUN DATABASE_URL=sqlite:///:memory: python manage.py collectstatic --noinput
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Run collectstatic during build (using dummy env vars if needed)
+# Cloud Run sets the PORT environment variable
+EXPOSE $PORT
+
+# Start gunicorn
+CMD exec gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 0 myproject.wsgi:application

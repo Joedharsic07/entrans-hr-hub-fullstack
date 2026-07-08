@@ -20,6 +20,7 @@ export class CreateProjectComponent implements OnInit {
   isDropdownOpen = false;
   isOwnerDropdownOpen = false;
   ownerSearch: string = '';
+  memberSearch: string = '';
   selectedOwner: any = null;
 
   constructor(
@@ -119,6 +120,13 @@ export class CreateProjectComponent implements OnInit {
     if (!this.ownerSearch) return this.allUsers;
     return this.allUsers.filter(user =>
       user.name.toLowerCase().includes(this.ownerSearch.toLowerCase())
+    );
+  }
+
+  filteredMembers(): any[] {
+    if (!this.memberSearch) return this.allUsers;
+    return this.allUsers.filter(user =>
+      user.name.toLowerCase().includes(this.memberSearch.toLowerCase())
     );
   }
 }

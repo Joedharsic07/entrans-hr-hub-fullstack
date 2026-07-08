@@ -1,88 +1,93 @@
-<div class="min-h-screen bg-slate-100 flex items-center justify-center font-sans antialiased text-slate-800 p-4 sm:p-8">
+<div class="min-h-screen w-full flex flex-col lg:flex-row bg-white font-sans antialiased text-slate-800">
 
-  <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 shadow-2xl rounded-3xl overflow-hidden">
+  <!-- Left Panel: Form -->
+  <div class="w-full lg:w-[45%] h-screen overflow-y-auto flex flex-col px-8 sm:px-16 lg:px-24 py-8 relative">
+    
+    <!-- Header / Logo -->
+    <div class="flex items-center gap-2 shrink-0">
+      <img src="/assets/logo.png" alt="Entrans Logo" class="h-8 w-auto" />
+      <span class="text-slate-900 font-bold text-sm tracking-widest uppercase">HR Hub <span class="text-primary">Elite</span></span>
+    </div>
 
-    <!-- Left Panel: Form -->
-    <div class="bg-white flex flex-col p-8 sm:p-12">
-
-      <!-- Logo -->
-      <div class="flex items-center gap-3 mb-10">
-        <img src="/assets/logo.png" alt="Entrans Logo" class="h-10 w-auto" />
-        <div class="h-5 w-px bg-slate-200"></div>
-        <span class="text-slate-500 font-semibold text-xs tracking-widest uppercase">HR Hub Elite</span>
-      </div>
-
+    <!-- Main Centered Content -->
+    <div class="flex-1 flex flex-col justify-center my-10 max-w-[400px] w-full mx-auto">
+      
       <!-- Heading -->
       <div class="mb-8">
-        <h1 class="page-title mb-1">Welcome back</h1>
-        <p class="text-slate-500 text-sm">Sign in to your account to continue.</p>
+        <h1 class="text-3xl font-bold text-slate-900 mb-3">Welcome back</h1>
+        <p class="text-slate-600 text-sm">Please enter your details to access your dashboard</p>
       </div>
 
       <!-- Form -->
       <form [formGroup]="loginForm" class="space-y-5">
-
-        <!-- Email -->
+        
+        <!-- Email Input -->
         <div>
-          <label for="email" class="label-text">Email Address</label>
           <input type="email" id="email" formControlName="email"
-            class="form-input"
-            placeholder="name@company.com" />
+            class="block w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary outline-none placeholder:text-slate-500"
+            placeholder="Email address" />
           <div *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.invalid" class="mt-1.5 space-y-1">
-            <small class="text-red-500 font-semibold text-xs flex items-center gap-1"
+            <small class="text-red-500 font-semibold text-xs flex items-center gap-1.5"
               *ngIf="loginForm.get('email')?.errors?.['required']">
               <i class="bi bi-exclamation-circle-fill"></i> Email is required.
             </small>
-            <small class="text-red-500 font-semibold text-xs flex items-center gap-1"
+            <small class="text-red-500 font-semibold text-xs flex items-center gap-1.5"
               *ngIf="loginForm.get('email')?.errors?.['email']">
               <i class="bi bi-exclamation-circle-fill"></i> Invalid email format.
             </small>
           </div>
         </div>
 
-        <!-- Password -->
+        <!-- Password Input -->
         <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <label for="password" class="label-text !mb-0">Password</label>
-            <a routerLink="/password_reset"
-              class="text-xs font-bold text-primary hover:text-primary-hover hover:underline transition-all">Forgot password?</a>
-          </div>
           <div class="relative">
             <input [type]="isPasswordVisible ? 'text' : 'password'" id="password" formControlName="password"
-              class="form-input pr-11"
-              placeholder="••••••••" />
+              class="block w-full pl-4 pr-12 py-3 bg-white border border-slate-300 rounded-lg text-sm transition-all focus:border-primary focus:ring-1 focus:ring-primary outline-none placeholder:text-slate-500"
+              placeholder="Password" />
             <button type="button" (click)="isPasswordVisible = !isPasswordVisible"
-              class="absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none">
-              <i class="bi" [ngClass]="isPasswordVisible ? 'bi-eye-slash-fill' : 'bi-eye-fill'"></i>
+              class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-700 transition-colors focus:outline-none">
+              <i class="bi text-lg" [ngClass]="isPasswordVisible ? 'bi-eye-slash-fill' : 'bi-eye'"></i>
             </button>
           </div>
           <div *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid" class="mt-1.5 space-y-1">
-            <small class="text-red-500 font-semibold text-xs flex items-center gap-1"
+            <small class="text-red-500 font-semibold text-xs flex items-center gap-1.5"
               *ngIf="loginForm.get('password')?.errors?.['required']">
               <i class="bi bi-exclamation-circle-fill"></i> Password is required.
             </small>
-            <small class="text-red-500 font-semibold text-xs flex items-center gap-1"
+            <small class="text-red-500 font-semibold text-xs flex items-center gap-1.5"
               *ngIf="loginForm.get('password')?.errors?.['minlength']">
               <i class="bi bi-exclamation-circle-fill"></i> Minimum 8 characters.
             </small>
-            <small class="text-red-500 font-semibold text-xs flex items-center gap-1"
+            <small class="text-red-500 font-semibold text-xs flex items-center gap-1.5"
               *ngIf="loginForm.get('password')?.errors?.['maxlength']">
               <i class="bi bi-exclamation-circle-fill"></i> Maximum 12 characters.
             </small>
-            <small class="text-red-500 font-semibold text-xs flex items-center gap-1"
+            <small class="text-red-500 font-semibold text-xs flex items-center gap-1.5"
               *ngIf="loginForm.get('password')?.errors?.['pattern']">
               <i class="bi bi-exclamation-circle-fill"></i> Invalid password format.
             </small>
           </div>
         </div>
 
+        <!-- Remember me & Forgot Password -->
+        <div class="flex items-center justify-between">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer">
+            <span class="text-xs font-medium text-slate-600">Remember me</span>
+          </label>
+          <a routerLink="/password_reset" class="text-xs text-primary hover:text-primary-hover font-bold hover:underline transition-all">
+            Forgot password?
+          </a>
+        </div>
+
         <!-- Submit Button -->
         <div class="pt-2">
           <button type="submit" (click)="onLogin()" [disabled]="!loginForm.valid || isLoading"
-            class="btn btn-primary btn-lg w-full">
-            <span *ngIf="!isLoading">Log in to HR Hub</span>
-            <span *ngIf="isLoading" class="flex items-center gap-2">
-              <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 24 24">
+            class="btn btn-primary w-full py-3 text-sm font-bold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center gap-2">
+            <span *ngIf="!isLoading">Log in</span>
+            <i *ngIf="!isLoading" class="bi bi-arrow-right"></i>
+            <span *ngIf="isLoading" class="flex items-center justify-center gap-2">
+              <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor"
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
@@ -95,23 +100,59 @@
 
       </form>
 
-      <div class="mt-8 pt-6 border-t border-slate-100 text-center">
-        <p class="text-sm text-slate-500">
-          Don't have an account?
-          <button (click)="onSignup()"
-            class="font-bold text-primary hover:text-primary-hover hover:underline focus:outline-none transition-colors">Sign
-            up now</button>
-        </p>
+      <!-- Divider -->
+      <div class="relative my-8">
+        <div class="absolute inset-0 flex items-center">
+          <div class="w-full border-t border-slate-200"></div>
+        </div>
+        <div class="relative flex justify-center text-xs">
+          <span class="px-3 bg-white text-slate-400 font-medium">Or continue with</span>
+        </div>
+      </div>
+
+      <!-- Social Buttons -->
+      <div class="grid grid-cols-2 gap-4">
+        <button type="button" class="flex items-center justify-center gap-2 py-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700">
+          <i class="bi bi-person-badge text-primary text-base"></i> SSO
+        </button>
+        <button type="button" class="flex items-center justify-center gap-2 py-2.5 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors text-xs font-bold text-slate-700">
+          <i class="bi bi-google text-primary text-base"></i> Google
+        </button>
       </div>
 
     </div>
 
-    <!-- Right Panel: Image — same height as form card -->
-    <div class="hidden lg:block relative overflow-hidden">
-      <img src="/assets/loginLogo.png" alt="Login Illustration"
-        class="absolute inset-0 w-full h-full object-cover" />
+    <!-- Footer -->
+    <div class="shrink-0 text-center text-sm text-slate-600 mt-auto">
+      Don't have an account? 
+      <button (click)="onSignup()" class="font-bold text-primary hover:underline ml-1">Sign up for free</button>
     </div>
 
+  </div>
+
+  <!-- Right Panel: Image & Text -->
+  <div class="hidden lg:flex lg:w-[55%] bg-primary relative flex-col items-center justify-between p-12 overflow-hidden h-screen bg-gradient-to-br from-primary to-blue-800">
+    
+    <!-- Abstract network/node background effect -->
+    <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 32px 32px;"></div>
+    
+    <div class="absolute top-0 right-0 -mt-24 -mr-24 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-0 left-0 -mb-24 -ml-24 w-96 h-96 bg-black/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="w-full flex-1 flex flex-col items-center justify-center relative z-10 pt-10">
+      <!-- The Image -->
+      <img src="/assets/loginHero.png" alt="Dashboard Illustration"
+        class="w-full max-w-2xl max-h-[60vh] xl:max-h-[70vh] object-contain drop-shadow-2xl transition-transform duration-700 hover:scale-[1.02]" />
+    </div>
+
+    <!-- Text area at bottom right -->
+    <div class="relative z-10 text-center text-white pb-6 max-w-lg mx-auto">
+      <h2 class="text-3xl font-bold mb-4">Empower your global workforce.</h2>
+      <p class="text-white/80 text-sm leading-relaxed">
+        HR HUB ELITE offers precision analytics and seamless employee experiences for high-stakes enterprise management.
+      </p>
+    </div>
+    
   </div>
 
 </div>

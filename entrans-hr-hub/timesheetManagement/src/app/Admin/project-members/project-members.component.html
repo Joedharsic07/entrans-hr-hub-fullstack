@@ -1,9 +1,4 @@
-<div class="flex flex-col md:flex-row h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
-
-  <!-- Decorative Background -->
-  <div
-    class="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none origin-top blur-3xl transform scale-150 z-0">
-  </div>
+<div class="flex flex-col md:flex-row h-screen bg-white font-sans text-slate-800 overflow-hidden relative">
 
   <!-- Sidebar -->
   <div class="hidden md:block md:w-72 bg-white border-r border-slate-200 relative z-20 flex-shrink-0">
@@ -11,306 +6,291 @@
   </div>
 
   <!-- Main Content -->
-  <div class="main-content-wrapper">
-    <div class="w-full max-w-7xl flex flex-col min-h-full">
-
-      <!-- Page Header -->
-      <div
-        class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5 bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
-        <div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
-        <div class="flex items-center gap-3">
-          <button (click)="goBack()"
-            class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors focus:outline-none flex-shrink-0">
-            <i class="bi bi-arrow-left"></i>
-          </button>
-          <div class="flex items-center gap-3">
-            <div
-              class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20 text-primary">
-              <i class="bi bi-people-fill text-lg"></i>
-            </div>
-            <div>
-              <h1 class="text-xl font-extrabold text-slate-900 tracking-tight leading-tight">Project Members</h1>
-              <p class="text-slate-500 text-xs font-medium">Browse projects and view assigned users with their roles.</p>
-            </div>
-          </div>
-        </div>
-        <!-- Stats pill + reminder button -->
-        <div class="flex items-center gap-2 self-start md:self-auto">
-          <div class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 font-semibold">
-            <i class="bi bi-folder2 text-primary"></i>
-            {{ projectsData.count }} total project{{ projectsData.count !== 1 ? 's' : '' }}
-          </div>
-          <button (click)="sendReminders()" [disabled]="reminderLoading"
-            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-semibold hover:bg-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none shadow-sm">
-            <span *ngIf="reminderLoading" class="inline-block w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            <i *ngIf="!reminderLoading" class="bi bi-bell-fill text-xs"></i>
-            <span>{{ reminderLoading ? 'Sending...' : 'Send Reminders' }}</span>
-          </button>
+  <div class="flex-1 flex flex-col min-h-0 bg-white">
+    
+    <!-- Top Header mimicking mockup -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white flex-shrink-0">
+      <div class="flex items-center gap-8">
+        <div>
+          <h1 class="text-lg font-black text-slate-900 tracking-wide uppercase">Project Members</h1>
+          <p class="text-xs text-slate-500 font-medium mt-0.5">Manage teams and resources across all active projects</p>
         </div>
       </div>
+      <div class="flex items-center gap-4">
+        <button (click)="sendReminders()" [disabled]="reminderLoading"
+          class="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-bold transition-colors focus:outline-none disabled:opacity-50 border border-amber-200">
+          <span *ngIf="reminderLoading" class="inline-block w-3.5 h-3.5 border-2 border-amber-700 border-t-transparent rounded-full animate-spin"></span>
+          <i *ngIf="!reminderLoading" class="bi bi-bell-fill"></i>
+          <span class="hidden sm:inline">{{ reminderLoading ? 'Sending...' : 'Reminders' }}</span>
+        </button>
+      </div>
+    </div>
 
-      <!-- Two-pane layout -->
-      <div class="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
+    <!-- Two-pane layout -->
+    <div class="flex flex-col lg:flex-row flex-1 min-h-0">
 
-        <!-- ===== LEFT: Projects Pane ===== -->
-        <div class="w-full lg:w-80 xl:w-96 flex-shrink-0 flex flex-col gap-3">
+      <!-- ===== LEFT: Projects Pane ===== -->
+      <div class="w-full lg:w-80 xl:w-[380px] flex-shrink-0 flex flex-col gap-6 border-r border-slate-200 bg-white p-6 overflow-y-auto">
 
-          <!-- Project Search -->
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-              <i class="bi bi-search text-slate-400 text-sm"></i>
-            </div>
-            <input
-              type="text"
-              [(ngModel)]="projectSearch"
-              (ngModelChange)="onProjectSearchChange()"
-              placeholder="Search projects..."
-              class="w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary shadow-sm transition-all" />
-            <button *ngIf="projectSearch" (click)="clearProjectSearch()"
-              class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600">
-              <i class="bi bi-x-circle-fill text-sm"></i>
-            </button>
+        <!-- Project Search -->
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+            <i class="bi bi-search text-slate-400 text-sm"></i>
           </div>
+          <input
+            type="text"
+            [(ngModel)]="projectSearch"
+            (ngModelChange)="onProjectSearchChange()"
+            placeholder="Search projects..."
+            class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border-none rounded-xl text-sm font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-slate-100 transition-all" />
+          <button *ngIf="projectSearch" (click)="clearProjectSearch()"
+            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600">
+            <i class="bi bi-x-circle-fill text-sm"></i>
+          </button>
+        </div>
 
-          <!-- Project count + loading -->
-          <div class="flex items-center justify-between px-1 min-h-[20px]">
-            <p class="text-xs font-semibold text-slate-500">
-              {{ projectsData.count }} {{ projectsData.count === 1 ? 'project' : 'projects' }} found
-            </p>
-            <svg *ngIf="projectsLoading" class="animate-spin h-4 w-4 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-800 uppercase tracking-widest">Recent Projects</h3>
+          <span class="px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-black rounded-full">{{ projectsData.count }} TOTAL</span>
+        </div>
+
+        <!-- Project Cards -->
+        <div class="flex flex-col gap-4">
+          <div *ngIf="projectsLoading" class="flex justify-center py-8">
+            <svg class="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
             </svg>
           </div>
 
-          <!-- Empty project state -->
-          <div *ngIf="!projectsLoading && projectsData.results.length === 0"
-            class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 shadow-sm">
-            <i class="bi bi-folder-x text-3xl text-slate-300 block mb-2"></i>
-            <p class="font-bold text-slate-600 text-sm">No projects match your search.</p>
-          </div>
-
-          <!-- Project Cards -->
-          <div class="flex flex-col gap-2 overflow-y-auto flex-1" style="max-height: calc(100vh - 340px)">
-            <div *ngFor="let proj of projectsData.results"
+          <ng-container *ngIf="!projectsLoading">
+            <div *ngFor="let proj of projectsData.results; let i = index"
               (click)="selectProject(proj)"
-              class="group cursor-pointer bg-white rounded-xl border p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+              class="group cursor-pointer bg-white rounded-xl border p-5 transition-all duration-200"
               [ngClass]="selectedProject?.project_id === proj.project_id
-                ? 'border-primary ring-2 ring-primary/15 bg-primary/5'
-                : 'border-slate-200 hover:border-primary/40'">
-              <div class="flex items-center gap-3">
-                <div
-                  class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors border"
-                  [ngClass]="selectedProject?.project_id === proj.project_id
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-primary/10 text-primary border-primary/15 group-hover:bg-primary group-hover:text-white group-hover:border-primary'">
-                  <i class="bi bi-folder2 text-base"></i>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <p class="font-bold text-sm truncate"
-                    [ngClass]="selectedProject?.project_id === proj.project_id ? 'text-primary' : 'text-slate-800'">
-                    {{ proj.project_name }}
-                  </p>
-                  <p class="text-xs text-slate-500 font-medium mt-0.5">
-                    <i class="bi bi-people mr-1"></i>{{ proj.user_count }} {{ proj.user_count === 1 ? 'member' : 'members' }}
-                  </p>
-                </div>
-                <i class="bi bi-chevron-right text-xs flex-shrink-0 transition-colors"
-                  [ngClass]="selectedProject?.project_id === proj.project_id ? 'text-primary' : 'text-slate-300'"></i>
+                ? 'border-blue-600 ring-[0.5px] ring-blue-600 shadow-md'
+                : 'border-slate-200 shadow-sm hover:border-slate-300'">
+              
+              <div class="flex justify-between items-start mb-2.5">
+                <h4 class="font-extrabold text-[15px] text-slate-900 truncate pr-2">{{ proj.project_name }}</h4>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold shrink-0"
+                  [ngClass]="i % 2 === 0 ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'">
+                  {{ i % 2 === 0 ? 'Active' : 'Draft' }}
+                </span>
+              </div>
+              <div class="flex items-center text-xs font-bold text-slate-500 gap-4">
+                <span class="flex items-center gap-1.5"><i class="bi bi-people text-sm"></i> {{ proj.user_count }} Members</span>
+                <span class="flex items-center gap-1.5"><i class="bi bi-clock-history text-sm"></i> 2w ago</span>
               </div>
             </div>
-          </div>
 
-          <!-- Project Pagination -->
-          <div *ngIf="projectsData.total_pages > 1"
-            class="flex items-center justify-center gap-1 pt-2">
-            <button (click)="goToProjectPage(projectPage - 1)" [disabled]="projectPage === 1"
-              class="w-8 h-8 rounded-lg flex items-center justify-center text-sm border border-slate-200 bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors">
-              <i class="bi bi-chevron-left text-xs"></i>
-            </button>
+            <!-- New Project Button -->
+          </ng-container>
 
+          <!-- Pagination -->
+          <div *ngIf="projectsData.total_pages > 1" class="flex justify-center gap-1 mt-4">
+            <button (click)="goToProjectPage(projectPage - 1)" [disabled]="projectPage === 1" class="w-7 h-7 rounded flex items-center justify-center text-xs border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50"><i class="bi bi-chevron-left"></i></button>
             <ng-container *ngFor="let p of projectPageNumbers">
-              <span *ngIf="p === -1" class="w-8 h-8 flex items-center justify-center text-slate-400 text-xs font-bold">â€¦</span>
-              <button *ngIf="p !== -1" (click)="goToProjectPage(p)"
-                class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold border transition-colors"
-                [ngClass]="p === projectsData.current_page
-                  ? 'bg-primary text-white border-primary shadow-sm'
-                  : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'">
+              <span *ngIf="p === -1" class="w-7 h-7 flex items-center justify-center text-slate-400 text-xs font-bold">...</span>
+              <button *ngIf="p !== -1" (click)="goToProjectPage(p)" class="w-7 h-7 rounded flex items-center justify-center text-xs font-bold border"
+                [ngClass]="p === projectsData.current_page ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'">
                 {{ p }}
               </button>
             </ng-container>
-
-            <button (click)="goToProjectPage(projectPage + 1)" [disabled]="projectPage === projectsData.total_pages"
-              class="w-8 h-8 rounded-lg flex items-center justify-center text-sm border border-slate-200 bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors">
-              <i class="bi bi-chevron-right text-xs"></i>
-            </button>
+            <button (click)="goToProjectPage(projectPage + 1)" [disabled]="projectPage === projectsData.total_pages" class="w-7 h-7 rounded flex items-center justify-center text-xs border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50"><i class="bi bi-chevron-right"></i></button>
           </div>
-
         </div>
+      </div>
 
-        <!-- ===== RIGHT: Users Pane ===== -->
-        <div class="flex-1 flex flex-col gap-4 min-h-0">
-
-          <!-- Placeholder when no project selected -->
-          <div *ngIf="!selectedProject"
-            class="flex-1 bg-white rounded-2xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-center p-12 shadow-sm">
-            <div
-              class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4 border border-slate-200">
-              <i class="bi bi-cursor-fill text-2xl text-slate-400"></i>
+      <!-- ===== RIGHT: Users Pane ===== -->
+      <div class="flex-1 bg-slate-50/50 p-6 lg:p-10 overflow-y-auto relative">
+        <ng-container *ngIf="selectedProject; else noProject">
+          <div class="max-w-6xl mx-auto">
+            
+            <div class="flex items-center gap-2 text-blue-700 text-xs font-black tracking-widest uppercase mb-5">
+              <i class="bi bi-folder2-open text-base"></i> GLOBAL OPERATIONS
             </div>
-            <p class="font-bold text-slate-600 text-lg">Select a project</p>
-            <p class="text-slate-400 text-sm mt-1 max-w-xs">Click on a project to view its members and filter by name, email or role.</p>
-          </div>
+            
+            <div class="flex flex-col xl:flex-row xl:items-start justify-between gap-6 mb-10">
+              <div class="max-w-2xl">
+                <h1 class="text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight mb-4">{{ selectedProject.project_name }}</h1>
+                <p class="text-slate-600 text-[15px] leading-relaxed font-medium">
+                  {{ usersData?.project_description || 'No description available for this project.' }}
+                </p>
+              </div>
+              
+              <div class="flex flex-row xl:flex-col gap-3 min-w-[160px] shrink-0">
+                <button class="flex-1 py-2.5 px-4 bg-white border border-slate-300 rounded-lg text-sm font-bold text-slate-800 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 shadow-sm">
+                  <i class="bi bi-pencil"></i> Edit Details
+                </button>
+                <button (click)="openAddUserModal()" class="flex-1 py-2.5 px-4 bg-[#0a4cc4] rounded-lg text-sm font-bold text-white hover:bg-[#083e9e] transition-colors flex items-center justify-center gap-2 shadow-sm">
+                  <i class="bi bi-person-plus-fill"></i> Add User
+                </button>
+              </div>
+            </div>
 
-          <!-- Users panel -->
-          <ng-container *ngIf="selectedProject">
-
-            <!-- Panel header + user search -->
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm">
-              <!-- Title row -->
-              <div class="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
-                    <i class="bi bi-folder2-open text-lg"></i>
-                  </div>
-                  <div>
-                    <h2 class="text-lg font-extrabold text-slate-800 leading-tight">{{ selectedProject.project_name }}</h2>
-                    <p class="text-xs text-slate-500 font-medium mt-0.5">
-                      {{ usersData ? usersData.count : selectedProject.user_count }}
-                      {{ (usersData ? usersData.count : selectedProject.user_count) === 1 ? 'member' : 'members' }}
-                      <span *ngIf="userSearch"> matching "{{ userSearch }}"</span>
-                    </p>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2">
-                  <button (click)="openAddUserModal()"
-                    class="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors focus:outline-none shadow-sm">
-                    <i class="bi bi-person-plus text-sm"></i>
-                    <span>Add User</span>
-                  </button>
-                  <button (click)="clearProject()"
-                    class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-2 rounded-full transition-colors focus:outline-none lg:hidden">
-                    <i class="bi bi-x-lg text-sm"></i>
-                  </button>
+            <!-- Stats row -->
+            <div class="grid grid-cols-2 xl:grid-cols-3 gap-4 mb-8 lg:mb-12">
+              <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 flex flex-col justify-between min-h-[7rem]">
+                <p class="text-[13px] font-bold text-slate-500 mb-1">Team Size</p>
+                <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span class="text-2xl sm:text-3xl font-extrabold text-[#0a4cc4]">{{ usersData ? usersData.count : selectedProject.user_count }}</span>
+                  <span class="text-xs sm:text-sm font-bold text-slate-400">Active</span>
                 </div>
               </div>
-
-              <!-- User search input -->
-              <div class="px-6 py-4">
-                <div class="relative">
-                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <i class="bi bi-search text-slate-400 text-sm"></i>
-                  </div>
-                  <input
-                    type="text"
-                    [(ngModel)]="userSearch"
-                    (ngModelChange)="onUserSearchChange()"
-                    placeholder="Search by name, email or role..."
-                    class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all" />
-                  <button *ngIf="userSearch" (click)="clearUserSearch()"
-                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600">
-                    <i class="bi bi-x-circle-fill text-sm"></i>
-                  </button>
+              <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 flex flex-col justify-between min-h-[7rem]">
+                <p class="text-[13px] font-bold text-slate-500 mb-1">Total Hours</p>
+                <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <div *ngIf="usersLoading" class="h-8 w-16 sm:w-24 bg-slate-200 animate-pulse rounded-md mt-1"></div>
+                  <span *ngIf="!usersLoading" class="text-2xl sm:text-3xl font-extrabold text-slate-900">{{usersData?.total_duration !== undefined ? usersData?.total_duration : '0'}}</span>
+                </div>
+              </div>
+              
+              <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-100 flex flex-col justify-between min-h-[7rem]">
+                <p class="text-[13px] font-bold text-slate-500 mb-1">Next Deadline</p>
+                <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span class="text-2xl sm:text-3xl font-extrabold text-slate-900 whitespace-nowrap">Oct 24</span>
+                  <span class="text-xs sm:text-sm font-bold text-slate-400">v3.0</span>
                 </div>
               </div>
             </div>
 
-            <!-- Users loading -->
-            <div *ngIf="usersLoading" class="flex items-center justify-center py-16">
-              <svg class="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <!-- Project Members Header -->
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h2 class="text-2xl font-extrabold text-slate-900">Project Members</h2>
+                <p class="text-sm text-slate-500 mt-1 font-medium">People assigned to this initiative and their current roles.</p>
+              </div>
+              <div class="flex items-center gap-1 bg-slate-200/60 p-1 rounded-xl">
+                <button (click)="viewMode = 'grid'" [ngClass]="viewMode === 'grid' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"><i class="bi bi-grid-fill"></i></button>
+                <button (click)="viewMode = 'list'" [ngClass]="viewMode === 'list' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'" class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors"><i class="bi bi-list-ul text-lg"></i></button>
+              </div>
+            </div>
+
+            <!-- Users Grid -->
+            <div *ngIf="usersLoading" class="flex justify-center py-12">
+              <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
               </svg>
             </div>
 
-            <!-- No users -->
-            <div *ngIf="!usersLoading && usersData && usersData.users.length === 0"
-              class="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500 shadow-sm">
-              <i class="bi bi-person-x text-3xl text-slate-300 block mb-2"></i>
-              <p class="font-bold text-slate-600">
-                {{ userSearch ? 'No users match your search.' : 'No users assigned to this project.' }}
-              </p>
-            </div>
-
-            <!-- Users grid -->
-            <div *ngIf="!usersLoading && usersData && usersData.users.length > 0"
-              class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 overflow-y-auto"
-              style="max-height: calc(100vh - 460px)">
-              <div *ngFor="let u of usersData.users"
-                (click)="viewUserTimesheet(u)"
-                class="group bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col gap-4 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer relative overflow-hidden">
-
-                <!-- Hover accent -->
-                <div class="absolute inset-x-0 bottom-0 h-0.5 bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
-
-                <div class="flex items-center gap-3">
-                  <div
-                    class="w-11 h-11 rounded-full flex items-center justify-center font-extrabold text-base flex-shrink-0 border-2 uppercase"
-                    [ngClass]="u.role === 'owner'
-                      ? 'bg-primary/10 text-primary border-primary/25'
-                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'">
-                    {{ u.user_name.charAt(0) }}
+            <div *ngIf="!usersLoading && usersData && usersData.users.length > 0">
+              
+              <!-- GRID VIEW -->
+              <div *ngIf="viewMode === 'grid'" class="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+                <div *ngFor="let u of usersData.users; let i = index" class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 flex flex-col hover:shadow-md transition-shadow">
+                  <div class="flex justify-between items-start mb-5 gap-3">
+                    <div class="flex gap-3 min-w-0 flex-1">
+                      <div class="w-12 h-12 rounded-full flex items-center justify-center font-extrabold text-lg text-white shrink-0 overflow-hidden"
+                           [ngClass]="i % 4 === 0 ? 'bg-indigo-600' : (i % 4 === 1 ? 'bg-orange-500' : (i % 4 === 2 ? 'bg-emerald-600' : 'bg-slate-700'))">
+                        <img *ngIf="i % 3 === 0" src="https://ui-avatars.com/api/?name={{u.user_name}}&background=random" class="w-full h-full object-cover opacity-80 mix-blend-screen" />
+                        <span *ngIf="i % 3 !== 0">{{ u.user_name.charAt(0).toUpperCase() }}</span>
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <h4 class="font-bold text-slate-900 text-[15px] leading-tight mb-1 truncate" title="{{ u.user_name }}">{{ u.user_name }}</h4>
+                        <p class="text-xs text-slate-500 font-medium truncate" title="{{ u.designation || 'Team Member' }}">{{ u.designation || 'Team Member' }}</p>
+                        <p class="text-xs text-slate-500 font-medium truncate" title="{{u.email || ''}}">{{u.email ||""}}</p>
+                      </div>
+                    </div>
+                    <button class="text-slate-400 hover:text-slate-700 transition-colors p-1"><i class="bi bi-three-dots-vertical"></i></button>
                   </div>
-                  <div class="min-w-0 flex-1">
-                    <p class="font-bold text-slate-800 text-sm truncate group-hover:text-primary transition-colors">{{ u.user_name }}</p>
-                    <p class="text-xs text-slate-500 truncate mt-0.5">{{ u.email }}</p>
-                    <p *ngIf="u.designation" class="text-xs text-slate-400 truncate mt-0.5 italic">{{ u.designation }}</p>
+
+                  <!-- Tags -->
+                  <!-- <div class="flex flex-wrap gap-2 mb-8">
+                    <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-black tracking-wide rounded" *ngIf="i % 2 === 0">FRONTEND</span>
+                    <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-black tracking-wide rounded" *ngIf="i % 3 === 0">LEADERSHIP</span>
+                    <span class="px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-black tracking-wide rounded">SECURITY</span>
+                    <span class="px-2.5 py-1 bg-orange-50 text-orange-700 text-[10px] font-black tracking-wide rounded" *ngIf="i % 2 !== 0">DESIGN</span>
+                  </div> -->
+
+                  <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <button (click)="viewUserTimesheet(u)" class="text-[#0a4cc4] hover:text-[#083e9e] text-[13px] font-bold flex items-center gap-1 transition-colors group">
+                      View Timesheet <i class="bi bi-chevron-right text-[11px] group-hover:translate-x-0.5 transition-transform"></i>
+                    </button>
                   </div>
                 </div>
 
-                <div class="flex items-center justify-between pt-1 border-t border-slate-100">
-                  <span
-                    class="px-3 py-1 rounded-full text-xs font-bold border"
-                    [ngClass]="u.role === 'owner'
-                      ? 'bg-primary/10 text-primary border-primary/20'
-                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'">
-                    <i class="bi mr-1"
-                      [ngClass]="u.role === 'owner' ? 'bi-shield-fill-check' : 'bi-person-check-fill'"></i>
-                    {{ u.role | titlecase }}
-                  </span>
-                  <span class="flex items-center gap-1 text-xs font-semibold text-slate-400 group-hover:text-primary transition-colors">
-                    <i class="bi bi-calendar-range text-xs"></i>
-                    View Timesheet
-                  </span>
+                <!-- Add Member Placeholder Card -->
+                <div (click)="openAddUserModal()" class="border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center p-6 text-slate-400 hover:text-[#0a4cc4] hover:border-[#0a4cc4]/30 hover:bg-[#0a4cc4]/5 transition-colors cursor-pointer min-h-[200px]">
+                  <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                    <i class="bi bi-plus text-2xl"></i>
+                  </div>
+                  <span class="text-sm font-bold">Add Member</span>
                 </div>
               </div>
+
+              <!-- LIST VIEW -->
+              <div *ngIf="viewMode === 'list'" class="flex flex-col gap-4">
+                <div *ngFor="let u of usersData.users; let i = index" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between hover:shadow-md transition-shadow gap-4">
+                  <!-- User Info -->
+                  <div class="flex items-center gap-4 min-w-[200px]">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-white shrink-0 overflow-hidden"
+                         [ngClass]="i % 4 === 0 ? 'bg-indigo-600' : (i % 4 === 1 ? 'bg-orange-500' : (i % 4 === 2 ? 'bg-emerald-600' : 'bg-slate-700'))">
+                      <img *ngIf="i % 3 === 0" src="https://ui-avatars.com/api/?name={{u.user_name}}&background=random" class="w-full h-full object-cover opacity-80 mix-blend-screen" />
+                      <span *ngIf="i % 3 !== 0">{{ u.user_name.charAt(0).toUpperCase() }}</span>
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-slate-900 text-[15px] leading-tight mb-0.5">{{ u.user_name }}</h4>
+                      <p class="text-xs text-slate-500 font-medium">{{ u.designation || 'Team Member' }}</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Tags -->
+                  <div class="hidden lg:flex flex-wrap gap-2 flex-1 justify-center px-4">
+                    <span class="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-black tracking-wide rounded" *ngIf="i % 2 === 0">FRONTEND</span>
+                    <span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-black tracking-wide rounded" *ngIf="i % 3 === 0">LEADERSHIP</span>
+                    <span class="px-2.5 py-1 bg-blue-50 text-blue-700 text-[10px] font-black tracking-wide rounded">SECURITY</span>
+                  </div>
+
+                  <!-- Commitment -->
+                  <div class="hidden xl:block min-w-[120px] text-right">
+                    <p class="text-[9px] font-black text-slate-400 mb-0.5 tracking-wider uppercase">Commitment</p>
+                    <p class="text-xs font-bold text-slate-900">40 Hrs / 100%</p>
+                  </div>
+
+                  <!-- Action -->
+                  <div class="flex items-center justify-between sm:justify-end gap-4 min-w-[140px] shrink-0 border-t sm:border-t-0 border-slate-100 pt-3 sm:pt-0">
+                    <button (click)="viewUserTimesheet(u)" class="text-[#0a4cc4] hover:bg-[#0a4cc4]/5 px-3 py-2 rounded-lg text-xs font-bold transition-colors">
+                      View Timesheet
+                    </button>
+                    <button class="text-slate-400 hover:text-slate-700 transition-colors p-2"><i class="bi bi-three-dots-vertical"></i></button>
+                  </div>
+                </div>
+                
+                <!-- Add Member List Item -->
+                <div (click)="openAddUserModal()" class="border-2 border-dashed border-slate-200 rounded-2xl flex items-center p-4 text-slate-400 hover:text-[#0a4cc4] hover:border-[#0a4cc4]/30 hover:bg-[#0a4cc4]/5 transition-colors cursor-pointer justify-center gap-2 min-h-[72px]">
+                  <i class="bi bi-plus-circle text-lg"></i>
+                  <span class="text-sm font-bold">Add Member</span>
+              </div>
+              
+              <app-footer></app-footer>
+            </div>
             </div>
 
             <!-- User Pagination -->
-            <div *ngIf="usersData && usersData.total_pages > 1"
-              class="flex items-center justify-between pt-2">
-              <p class="text-xs text-slate-500 font-medium">
+            <div *ngIf="usersData && usersData.total_pages > 1" class="flex items-center justify-between mt-8 pt-6 border-t border-slate-200/60">
+              <p class="text-xs text-slate-500 font-bold">
                 Page {{ usersData.current_page }} of {{ usersData.total_pages }}
-                &nbsp;Â·&nbsp; {{ usersData.count }} total
               </p>
               <div class="flex items-center gap-1">
-                <button (click)="goToUserPage(userPage - 1)" [disabled]="userPage === 1"
-                  class="w-8 h-8 rounded-lg flex items-center justify-center text-sm border border-slate-200 bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors">
-                  <i class="bi bi-chevron-left text-xs"></i>
-                </button>
-
-                <ng-container *ngFor="let p of userPageNumbers">
-                  <span *ngIf="p === -1" class="w-8 h-8 flex items-center justify-center text-slate-400 text-xs font-bold">â€¦</span>
-                  <button *ngIf="p !== -1" (click)="goToUserPage(p)"
-                    class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold border transition-colors"
-                    [ngClass]="p === usersData.current_page
-                      ? 'bg-primary text-white border-primary shadow-sm'
-                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'">
-                    {{ p }}
-                  </button>
-                </ng-container>
-
-                <button (click)="goToUserPage(userPage + 1)" [disabled]="userPage === usersData.total_pages"
-                  class="w-8 h-8 rounded-lg flex items-center justify-center text-sm border border-slate-200 bg-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors">
-                  <i class="bi bi-chevron-right text-xs"></i>
-                </button>
+                <button (click)="goToUserPage(userPage - 1)" [disabled]="userPage === 1" class="w-8 h-8 rounded border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-600"><i class="bi bi-chevron-left text-xs"></i></button>
+                <button (click)="goToUserPage(userPage + 1)" [disabled]="userPage === usersData.total_pages" class="w-8 h-8 rounded border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 text-slate-600"><i class="bi bi-chevron-right text-xs"></i></button>
               </div>
             </div>
 
-          </ng-container>
-        </div>
-      </div>
+          </div>
+        </ng-container>
 
+        <ng-template #noProject>
+          <div class="h-full flex items-center justify-center text-slate-500 min-h-[60vh]">
+            <div class="text-center">
+              <i class="bi bi-folder-x text-5xl text-slate-300 block mb-4"></i>
+              <p class="font-extrabold text-slate-600 text-lg">Select a project to view details</p>
+            </div>
+          </div>
+        </ng-template>
+      </div>
     </div>
   </div>
 </div>

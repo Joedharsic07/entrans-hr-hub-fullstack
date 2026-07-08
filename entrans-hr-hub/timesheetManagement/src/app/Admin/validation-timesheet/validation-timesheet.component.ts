@@ -6,6 +6,7 @@ interface Entry {
   top_status?: any;
   user_id: number;
   user_name: string;
+  user_email: string;
   project_id: number;
   project_name: string;
   selected?: boolean;
@@ -28,6 +29,7 @@ export class ValidationTimesheetComponent {
   data: Entry[] = [];
   selectedMonth = new Date().toISOString().slice(0, 7);
   loading = false;
+  isFetchingData = false;
   selectAll = false;
 
   constructor(private timesheetService: ServiceService, private toastrservice: ToastrService) {}
@@ -37,35 +39,60 @@ export class ValidationTimesheetComponent {
   }
 
   fetchData() {
-     const [year, month] = this.selectedMonth.split('-');
-    this.timesheetService.getUserProjects(month, year).subscribe(res => {
-      const items: Entry[] = [];
+    if (!this.selectedMonth) return;
+    this.isFetchingData = true;
+    this.data = [];
+    const [year, month] = this.selectedMonth.split('-');
+    this.timesheetService.getUserProjects(month, year).subscribe({
+      next: (res) => {
+        const items: Entry[] = [];
 
-      const processUser = (user: any) => {
-        user.projects.forEach((proj: any) => {
-          const validations = proj.timesheet_validations || [];
+        const processUser = (user: any) => {
+          if (!user.projects || user.projects.length === 0) {
+            items.push({
+              user_id: user.user_id,
+              user_name: user.user_name,
+              user_email: user.user_email,
+              project_id: 0,
+              project_name: 'No Project',
+              validation_status: 'Pending',
+              selected: false,
+              needs_rerun: false,
+              error: undefined
+            });
+          } else {
+            user.projects.forEach((proj: any) => {
+              const validations = proj.timesheet_validations || [];
 
-          const hasChanges = validations.some((entry: any) => entry.changed === true);
+              const hasChanges = validations.some((entry: any) => entry.changed === true);
 
-          const errorFlags = validations
-            .filter((entry: any) => entry.Status === 'Invalid' && entry.Flag)
-            .map((entry: any) => this.formatEntryFlag(entry));
+              const errorFlags = validations
+                .filter((entry: any) => entry.Status === 'Invalid' && entry.Flag)
+                .map((entry: any) => this.formatEntryFlag(entry));
 
-          items.push({
-            user_id: user.user_id,
-            user_name: user.user_name,
-            project_id: proj.project_id,
-            project_name: proj.project_name,
-            validation_status: proj.validation_status,
-            selected: false,
-            needs_rerun: hasChanges,
-            error: errorFlags.length > 0 ? errorFlags.join('\n') : undefined
-          });
-        });
-      };
+              items.push({
+                user_id: user.user_id,
+                user_name: user.user_name,
+                user_email: user.user_email,
+                project_id: proj.project_id,
+                project_name: proj.project_name,
+                validation_status: proj.validation_status,
+                selected: false,
+                needs_rerun: hasChanges,
+                error: errorFlags.length > 0 ? errorFlags.join('\n') : undefined
+              });
+            });
+          }
+        };
 
-      Array.isArray(res) ? res.forEach(processUser) : processUser(res);
-      this.data = items;
+        Array.isArray(res) ? res.forEach(processUser) : processUser(res);
+        this.data = items;
+        this.isFetchingData = false;
+      },
+      error: (err) => {
+        console.error('Error fetching data:', err);
+        this.isFetchingData = false;
+      }
     });
   }
   validateEntry(entry: Entry) {
@@ -122,7 +149,7 @@ toggleSelectAll() {
 
   const map: any = {};
   this.data.forEach(e => {
-    if (e.selected) {
+    if (e.selected && e.project_id) {
       e.loading = true;
       e.status = undefined;
       e.error = undefined;
@@ -190,7 +217,7 @@ toggleSelectAll() {
 }
 
 pushEmail(entry: Entry) {
-  if (!this.selectedMonth) return;
+  if (!this.selectedMonth || !entry.project_id) return;
 
   const [year, month] = this.selectedMonth.split('-');
 
@@ -249,7 +276,88 @@ pushEmail(entry: Entry) {
     }
   });
 }
-hasSelection(): boolean {
-  return this.data.some(e => e.selected);
-}
+  hasSelection(): boolean {
+    return this.data.some(e => e.selected);
+  }
+
+  // --- New Computed Properties and Helpers for Mockup UI ---
+
+  get totalEmployees(): number {
+    return this.data.length;
+  }
+
+  get validatedCount(): number {
+    return this.data.filter(e => this.getEntryStatus(e) === 'Valid').length;
+  }
+
+  get warningsCount(): number {
+    return this.data.filter(e => this.getEntryStatus(e) === 'Warning').length;
+  }
+
+  get missingCount(): number {
+    return this.data.filter(e => this.getEntryStatus(e) === 'Missing').length;
+  }
+
+  getEntryStatus(e: Entry): 'Valid' | 'Warning' | 'Missing' | 'Pending' {
+    if (e.status === 'success' && !e.error) return 'Valid';
+    if (e.status === 'error' || e.error) {
+      if (e.error?.toLowerCase().includes('no timesheet')) return 'Missing';
+      return 'Warning';
+    }
+    
+    // Fallback to initial validation_status
+    if (e.validation_status === 'Success' && !e.error) return 'Valid';
+    if (e.validation_status === 'Success' && e.error) return 'Warning';
+    if (e.validation_status === 'Needs rerun' && e.error) return 'Warning';
+    if (e.validation_status === 'Needs to be run' || e.error?.toLowerCase().includes('no timesheet')) return 'Missing';
+
+    return 'Pending';
+  }
+
+  getUserInitials(name: string): string {
+    if (!name) return 'U';
+    const parts = name.split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+
+  getAvatarColor(name: string): string {
+    if (!name) return 'bg-slate-100 text-slate-700 border-slate-200';
+    const colors = [
+      'bg-red-100 text-red-700 border-red-200',
+      'bg-orange-100 text-orange-700 border-orange-200',
+      'bg-amber-100 text-amber-700 border-amber-200',
+      'bg-green-100 text-green-700 border-green-200',
+      'bg-emerald-100 text-emerald-700 border-emerald-200',
+      'bg-teal-100 text-teal-700 border-teal-200',
+      'bg-cyan-100 text-cyan-700 border-cyan-200',
+      'bg-blue-100 text-blue-700 border-blue-200',
+      'bg-indigo-100 text-indigo-700 border-indigo-200',
+      'bg-violet-100 text-violet-700 border-violet-200',
+      'bg-purple-100 text-purple-700 border-purple-200',
+      'bg-fuchsia-100 text-fuchsia-700 border-fuchsia-200',
+      'bg-pink-100 text-pink-700 border-pink-200',
+      'bg-rose-100 text-rose-700 border-rose-200'
+    ];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+  getWorkLogClass(e: Entry, day: string): string {
+    const status = this.getEntryStatus(e);
+    // Mock logic to display bubbles like the design
+    if (status === 'Missing') {
+      return 'bg-slate-100 text-slate-300 font-medium'; // mostly grey
+    }
+    if (status === 'Warning' && day === 'W') {
+      return 'bg-red-100 text-red-500 flex items-center justify-center content-["!"]';
+    }
+    // Default blue for filled days
+    return 'bg-blue-600 text-white';
+  }
 }

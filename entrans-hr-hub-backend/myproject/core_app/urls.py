@@ -23,10 +23,15 @@ from .views import (
     TimeTrackingEmailAPI,
     UserTimesheetListView,
     UserListAPIView,
+    MeView,
+    UserAccessLogView,
     ValidateMultipleTimesheetView,
     PushTimesheetEmailView,
     ProjectUserRolesView,
     ProjectUsersView,
+    AdminDashboardStatsView,
+    AdminRecentActivityView,
+    AdminUpcomingAnniversariesView,
 )
 
 urlpatterns = [
@@ -98,9 +103,14 @@ urlpatterns = [
     path(
         "project-user-roles/<int:project_id>/", ProjectUsersView.as_view(), name="project-users"
     ),
+    path("me/", MeView.as_view(), name="me"),
+    path("access-logs/", UserAccessLogView.as_view(), name="access-logs"),
     path("create-user/", CreateUserView.as_view(), name="create-user"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("admin-users/", UserAdminView.as_view(), name="admin-users"),
     path("admin-users/<int:user_id>/", UserAdminDetailView.as_view(), name="admin-user-detail"),
     path("send-timesheet-reminders/", TimesheetReminderView.as_view(), name="send-timesheet-reminders"),
+    path("admin-dashboard-stats/", AdminDashboardStatsView.as_view(), name="admin-dashboard-stats"),
+    path("admin-recent-activity/", AdminRecentActivityView.as_view(), name="admin-recent-activity"),
+    path("admin-upcoming-anniversaries/", AdminUpcomingAnniversariesView.as_view(), name="admin-upcoming-anniversaries"),
 ]

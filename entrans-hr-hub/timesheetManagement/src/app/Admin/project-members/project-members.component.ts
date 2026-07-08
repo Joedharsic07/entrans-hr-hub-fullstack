@@ -18,6 +18,7 @@ interface ProjectSummary {
   project_id: number;
   project_name: string;
   user_count: number;
+  project_description?: string;
 }
 
 interface PaginatedProjects {
@@ -31,6 +32,8 @@ interface PaginatedProjects {
 interface ProjectDetail {
   project_id: number;
   project_name: string;
+  project_description: string;
+  total_duration:string;
   count: number;
   total_pages: number;
   current_page: number;
@@ -59,6 +62,7 @@ export class ProjectMembersComponent implements OnInit, OnDestroy {
   userSearch = '';
   userPage = 1;
   readonly userPageSize = 12;
+  viewMode: 'grid' | 'list' = 'grid';
 
   // Add User modal
   showAddUserModal = false;
