@@ -14,8 +14,8 @@ export class SidebarComponent implements OnInit {
   showUserDropdown = false;
   showChangePasswordModal = false;
 
-  userName = sessionStorage.getItem('name') || '';
-  userRole = sessionStorage.getItem('role') || '';
+  userName = sessionStorage.getItem('name') || localStorage.getItem('name') || '';
+  userRole = sessionStorage.getItem('role') || localStorage.getItem('role') || '';
 
   // Change Password form state
   cpForm = { old_password: '', new_password: '', confirm_password: '' };

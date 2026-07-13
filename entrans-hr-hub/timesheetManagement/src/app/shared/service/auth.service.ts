@@ -13,15 +13,19 @@ export class AuthService {
   constructor(private http: HttpClient) {}
 
   getAccessToken() {
-    return sessionStorage.getItem('accessToken');
+    return sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken');
   }
 
   getRefreshToken() {
-    return sessionStorage.getItem('refreshToken');
+    return sessionStorage.getItem('refreshToken') || localStorage.getItem('refreshToken');
   }
 
   setAccessToken(token: string) {
-    sessionStorage.setItem('accessToken', token);
+    if (localStorage.getItem('accessToken')) {
+      localStorage.setItem('accessToken', token);
+    } else {
+      sessionStorage.setItem('accessToken', token);
+    }
   }
 
   refreshToken(): Observable<string> {
@@ -35,5 +39,13 @@ export class AuthService {
   logout() {
     sessionStorage.removeItem('accessToken');
     sessionStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('profile');
+    sessionStorage.removeItem('name');
+    sessionStorage.removeItem('role');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('profile');
+    localStorage.removeItem('name');
+    localStorage.removeItem('role');
   }
 }

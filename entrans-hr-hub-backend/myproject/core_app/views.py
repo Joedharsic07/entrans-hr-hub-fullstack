@@ -53,6 +53,8 @@ import json
 import logging
 import os
 from django.conf import settings
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_auth_requests
 from core_app.utils.email_utils import EmailSender
 from scripts.ppt_generator import generate_presentation
 from scripts.timesheet_validation import TimeValidator, OutputManager
@@ -406,6 +408,85 @@ class LoginView(APIView):
                     "code": "server_error",
                     "message": "Internal server error",
                 },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class GoogleLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        credential = request.data.get("credential")
+        if not credential:
+            return Response(
+                {"status": "error", "message": "No Google credential provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            client_id = settings.GOOGLE_CLIENT_ID
+            idinfo = google_id_token.verify_oauth2_token(
+                credential, google_auth_requests.Request(), client_id
+            )
+
+            email = idinfo.get("email")
+            if not email:
+                return Response(
+                    {"status": "error", "message": "Email not found in Google token"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            UserModel = get_user_model()
+            try:
+                user = UserModel.objects.get(email=email)
+            except UserModel.DoesNotExist:
+                return Response(
+                    {
+                        "status": "error",
+                        "code": "user_not_found",
+                        "message": "No account found for this Google email. Please contact your administrator.",
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            if not user.is_active:
+                return Response(
+                    {"status": "error", "code": "account_inactive", "message": "Account is inactive"},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            access_token = generate_token(user, "access")
+            refresh_token = generate_token(user, "refresh")
+
+            try:
+                UserAccessLog.objects.create(
+                    user=user,
+                    action="login",
+                    status="success",
+                    ip_address=_get_client_ip(request),
+                    user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
+                )
+            except Exception:
+                pass
+
+            return Response(
+                {
+                    "status": "success",
+                    "user": UserSerializer(user).data,
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                }
+            )
+
+        except ValueError:
+            return Response(
+                {"status": "error", "code": "invalid_token", "message": "Invalid Google token"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        except Exception as e:
+            logger.error(f"Google login error: {str(e)}")
+            return Response(
+                {"status": "error", "code": "server_error", "message": "Internal server error"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

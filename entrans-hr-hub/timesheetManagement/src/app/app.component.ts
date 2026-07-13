@@ -46,31 +46,37 @@ export class AppComponent {
 
   updateUserData(fetchFromApi: boolean = false) {
     if (fetchFromApi) {
-      const token = sessionStorage.getItem('accessToken');
+      const token = sessionStorage.getItem('accessToken') || localStorage.getItem('accessToken');
       if (token && this.shouldShowNavbar()) {
         this.loginService.getMyProfile().subscribe({
           next: (res) => {
             this.userName = res.name;
             this.userRole = res.role;
-            sessionStorage.setItem('name', res.name);
-            sessionStorage.setItem('role', res.role);
+            const storage = localStorage.getItem('accessToken') ? localStorage : sessionStorage;
+            storage.setItem('name', res.name);
+            storage.setItem('role', res.role);
           },
           error: () => {
-            this.userName = sessionStorage.getItem('name');
-            this.userRole = sessionStorage.getItem('role');
+            this.userName = sessionStorage.getItem('name') || localStorage.getItem('name');
+            this.userRole = sessionStorage.getItem('role') || localStorage.getItem('role');
           }
         });
         return;
       }
     }
 
-    // Default fallback to session storage for rapid route changes
-    this.userName = sessionStorage.getItem('name');
-    this.userRole = sessionStorage.getItem('role');
+    // Default fallback to session/local storage for rapid route changes
+    this.userName = sessionStorage.getItem('name') || localStorage.getItem('name');
+    this.userRole = sessionStorage.getItem('role') || localStorage.getItem('role');
   }
 
   logout() {
     sessionStorage.clear();
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('profile');
+    localStorage.removeItem('name');
+    localStorage.removeItem('role');
     this.userName = null;
     this.userRole = null;
     this.router.navigate(['/login']);
