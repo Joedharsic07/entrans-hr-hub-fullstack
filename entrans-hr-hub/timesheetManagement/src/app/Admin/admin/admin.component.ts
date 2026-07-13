@@ -13,9 +13,9 @@ export class AdminComponent implements OnInit {
   showTimesheetOptions: boolean = false;
   isAdmin: boolean = false;
 
-  role = sessionStorage.getItem('role');
-  userName = sessionStorage.getItem('name') || 'Joe Dharsic';
-  userRole = sessionStorage.getItem('role') || 'Administrator';
+  role = sessionStorage.getItem('role') || localStorage.getItem('role');
+  userName = sessionStorage.getItem('name') || localStorage.getItem('name') || 'Joe Dharsic';
+  userRole = sessionStorage.getItem('role') || localStorage.getItem('role') || 'Administrator';
 
   // Non-admin user projects
   userProjects: any[] = [];

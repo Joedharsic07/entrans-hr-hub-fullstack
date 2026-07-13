@@ -16,3 +16,5 @@ python-dotenv
 django-crontab
 gunicorn
 whitenoise
+google-auth
+requests

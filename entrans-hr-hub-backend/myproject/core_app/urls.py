@@ -9,6 +9,7 @@ from .views import (
     MyTokenObtainPairView,
     RegisterView,
     LoginView,
+    GoogleLoginView,
     RefreshTokenView,
     RequestPasswordResetView,
     TimesheetListCreateView,
@@ -37,6 +38,7 @@ from .views import (
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
     path("login/", LoginView.as_view(), name="login"),
+    path("google-login/", GoogleLoginView.as_view(), name="google-login"),
     path("refresh-token/", RefreshTokenView.as_view(), name="refresh-token"),
     path("token/", MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("users/", UserListAPIView.as_view(), name="user-list"),

@@ -65,8 +65,8 @@ absentOptions = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
-    this.userName = sessionStorage.getItem('name')
-    this.userRole = sessionStorage.getItem('role')
+    this.userName = sessionStorage.getItem('name') || localStorage.getItem('name');
+    this.userRole = sessionStorage.getItem('role') || localStorage.getItem('role');
 
     this.selectedYear = currentYear;
     this.selectedMonth = new Date().getMonth(); // 0-based (Jan = 0)

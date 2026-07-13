@@ -22,6 +22,9 @@ signup(data: any): Observable<any> {
 login(data: any): Observable<any> {
   return this.http.post(`${this.baseUrl}/login/`, data)
 }
+googleLogin(credential: string): Observable<any> {
+  return this.http.post(`${this.baseUrl}/google-login/`, { credential })
+}
 resetLink(data: any): Observable<any> {
   return this.http.post(`${this.baseUrl}/request-password-reset/`, data)
 }

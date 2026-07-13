@@ -15,7 +15,7 @@ import { Route, Router } from '@angular/router';
 export class UserTimesheetsComponent implements OnInit {
 isAdmin :boolean =false
 
-role=sessionStorage.getItem('role')
+role = sessionStorage.getItem('role') || localStorage.getItem('role')
   entries: any
   constructor(private serive: ServiceService, private router:Router) { }
   ngOnInit(): void {

@@ -34,7 +34,7 @@ export class UserProfileComponent implements OnInit {
       last_name: ['', Validators.required],
       designation: ['']
     });
-    const stored = sessionStorage.getItem('profile');
+    const stored = sessionStorage.getItem('profile') || localStorage.getItem('profile');
     if (stored) {
       this.profile = JSON.parse(stored);
     }

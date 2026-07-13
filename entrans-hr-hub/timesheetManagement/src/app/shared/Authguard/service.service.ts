@@ -22,11 +22,20 @@ export class ServiceService {
 
   logout(): void {
     sessionStorage.removeItem('role');
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('profile');
+    sessionStorage.removeItem('name');
+    localStorage.removeItem('role');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('profile');
+    localStorage.removeItem('name');
     this.router.navigate(['/login']);
   }
 
   getUserRole(): string | null {
-    return sessionStorage.getItem('role');
+    return sessionStorage.getItem('role') || localStorage.getItem('role');
   }
 
   isLoggedIn(): boolean {
