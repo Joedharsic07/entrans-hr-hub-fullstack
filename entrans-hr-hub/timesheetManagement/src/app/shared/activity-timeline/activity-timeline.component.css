@@ -1,0 +1,14 @@
+/* Custom Scrollbar for activity timeline */
+:host ::ng-deep .custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+:host ::ng-deep .custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+:host ::ng-deep .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+:host ::ng-deep .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}

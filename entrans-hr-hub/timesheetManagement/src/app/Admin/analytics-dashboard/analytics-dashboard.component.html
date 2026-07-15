@@ -1,0 +1,103 @@
+<div class="min-h-screen bg-gray-50 p-8 font-sans">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Analytics Dashboard</h1>
+      <p class="text-sm text-gray-500 mt-1">Company overview and key performance metrics</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-500 mb-1">Active Employees</p>
+          <p class="text-3xl font-bold text-gray-900">{{stats.active_employees}}</p>
+        </div>
+        <div class="p-3 bg-indigo-50 rounded-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </div>
+      </div>
+      
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-gray-500 mb-1">Missing Timesheets</p>
+          <p class="text-3xl font-bold text-red-600">{{stats.missing_timesheets}}</p>
+        </div>
+        <div class="p-3 bg-red-50 rounded-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl p-6 shadow-lg shadow-indigo-200 text-white flex flex-col justify-center relative overflow-hidden group cursor-pointer hover:shadow-xl transition-all">
+        <div class="absolute right-0 top-0 w-32 h-32 bg-white opacity-10 rounded-bl-full -mr-8 -mt-8 group-hover:scale-110 transition-transform duration-500"></div>
+        <h3 class="font-medium opacity-90 mb-2 relative z-10">Export Reports</h3>
+        <div class="flex gap-3 relative z-10">
+          <a href="http://127.0.0.1:8000/api/exports/attendance/?format=excel" class="text-sm bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg backdrop-blur-sm transition-colors flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Excel
+          </a>
+          <a href="http://127.0.0.1:8000/api/exports/attendance/?format=pdf" class="text-sm bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg backdrop-blur-sm transition-colors flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            PDF
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Area -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Attendance Trend -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 col-span-1 lg:col-span-2">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Attendance Trend (Last 7 Days)</h2>
+        <div *ngIf="attendanceChartOptions?.series?.length > 0">
+          <apx-chart
+            [series]="attendanceChartOptions.series"
+            [chart]="attendanceChartOptions.chart"
+            [xaxis]="attendanceChartOptions.xaxis"
+            [stroke]="attendanceChartOptions.stroke"
+            [colors]="attendanceChartOptions.colors"
+            [dataLabels]="attendanceChartOptions.dataLabels"
+          ></apx-chart>
+        </div>
+      </div>
+
+      <!-- Leave Distribution -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Approved Leaves (This Month)</h2>
+        <div class="flex justify-center" *ngIf="leaveChartOptions?.series?.length > 0">
+          <apx-chart
+            [series]="leaveChartOptions.series"
+            [chart]="leaveChartOptions.chart"
+            [labels]="leaveChartOptions.labels"
+            [responsive]="leaveChartOptions.responsive"
+            [colors]="leaveChartOptions.colors"
+          ></apx-chart>
+        </div>
+        <div *ngIf="!leaveChartOptions?.series?.length" class="text-center py-12 text-gray-500">
+          No leave data for this month.
+        </div>
+      </div>
+
+      <!-- Project Distribution -->
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Project Allocation</h2>
+        <div *ngIf="projectChartOptions?.series?.length > 0">
+          <apx-chart
+            [series]="projectChartOptions.series"
+            [chart]="projectChartOptions.chart"
+            [xaxis]="projectChartOptions.xaxis"
+            [colors]="projectChartOptions.colors"
+          ></apx-chart>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -65,7 +65,11 @@ export class LoginComponent implements OnInit {
           sessionStorage.setItem('profile', JSON.stringify(res.user));
           sessionStorage.setItem('name', res.user.name);
           sessionStorage.setItem('role', res.user.role);
-          this.router.navigate(['/admin']);
+          if (res.user.role === 'Admin') {
+            this.router.navigate(['/admin']);
+          } else {
+            this.router.navigate(['/user-profile']);
+          }
         },
         error: (err) => {
           this.isGoogleLoading = false;
@@ -101,7 +105,11 @@ export class LoginComponent implements OnInit {
         storage.setItem('profile', JSON.stringify(res.user));
         storage.setItem('name', res.user.name);
         storage.setItem('role', res.user.role);
-        this.router.navigate(['/admin']);
+        if (res.user.role === 'Admin') {
+          this.router.navigate(['/admin']);
+        } else {
+          this.router.navigate(['/user-profile']);
+        }
       },
       error: (err) => {
         this.isLoading = false;

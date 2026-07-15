@@ -1,5 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { NgApexchartsModule } from 'ng-apexcharts';
+import { SharedModule } from './shared/shared.module';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -27,6 +29,9 @@ import { ProjectMembersComponent } from './Admin/project-members/project-members
 import { CreateUserComponent } from './Admin/create-user/create-user.component';
 import { UserListComponent } from './Admin/user-list/user-list.component';
 import { FooterComponent } from './Admin/footer/footer.component';
+import { LeaveDashboardComponent } from './component/leave-dashboard/leave-dashboard.component';
+import { AttendanceDashboardComponent } from './component/attendance-dashboard/attendance-dashboard.component';
+import { AnalyticsDashboardComponent } from './Admin/analytics-dashboard/analytics-dashboard.component';
 
 @NgModule({
   declarations: [
@@ -47,7 +52,10 @@ import { FooterComponent } from './Admin/footer/footer.component';
     ProjectMembersComponent,
     CreateUserComponent,
     UserListComponent,
-    FooterComponent
+    FooterComponent,
+    LeaveDashboardComponent,
+    AttendanceDashboardComponent,
+    AnalyticsDashboardComponent
   ],
   imports: [
     BrowserModule,
@@ -57,8 +65,9 @@ import { FooterComponent } from './Admin/footer/footer.component';
     ReactiveFormsModule,
     HttpClientModule ,
     ToastrModule.forRoot({ positionClass: 'toast-top-right', timeOut: 3000, preventDuplicates: true}),
-    BrowserAnimationsModule
-
+    BrowserAnimationsModule,
+    NgApexchartsModule,
+    SharedModule
   ],
   providers: [{ provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true,},AuthGuard
 
