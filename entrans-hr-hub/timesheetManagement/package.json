@@ -18,7 +18,7 @@
     "@angular/platform-browser": "^18.2.0",
     "@angular/platform-browser-dynamic": "^18.2.0",
     "@angular/router": "^18.2.0",
-    "apexcharts": "^5.16.0",
+    "apexcharts": "^3.53.0",
     "bootstrap": "^5.3.6",
     "file-saver": "^2.0.5",
     "ng-apexcharts": "^1.12.0",
