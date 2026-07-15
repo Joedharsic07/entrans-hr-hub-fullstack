@@ -32,12 +32,12 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-default-key-for-build-only
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    "entrans-hr-hub-fullstack.onrender.com",
+    "entrans-hr-hub-fullstasck.onrender.com",
     "*"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://entrans-hr-hub-fullstack.onrender.com",
+    "https://entrans-hr-hub-fullstasck.onrender.com",
 ]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
