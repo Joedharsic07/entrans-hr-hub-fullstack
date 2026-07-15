@@ -17,6 +17,8 @@ import { ValidationTimesheetComponent } from './Admin/validation-timesheet/valid
 import { ProjectMembersComponent } from './Admin/project-members/project-members.component';
 import { CreateUserComponent } from './Admin/create-user/create-user.component';
 import { UserListComponent } from './Admin/user-list/user-list.component';
+import { LeaveDashboardComponent } from './component/leave-dashboard/leave-dashboard.component';
+import { AttendanceDashboardComponent } from './component/attendance-dashboard/attendance-dashboard.component';
 
 const routes: Routes = [{
   path: '',
@@ -108,6 +110,16 @@ const routes: Routes = [{
   component: UserListComponent,
   canActivate: [AuthGuard],
   data: { roles: ['Admin'] }
+},
+{
+  path: 'leaves',
+  component: LeaveDashboardComponent,
+  canActivate: [AuthGuard]
+},
+{
+  path: 'attendance',
+  component: AttendanceDashboardComponent,
+  canActivate: [AuthGuard]
 }
 ];
 

@@ -25,17 +25,14 @@
 
       <!-- Search -->
       <div class="header-search">
-        <i class="bi bi-search header-search-icon"></i>
-        <input type="text" placeholder="Search..." class="header-search-input" />
+        <app-global-search></app-global-search>
       </div>
     </div>
 
     <!-- Right Section: Notification + User + Logout -->
     <div class="header-right">
       <!-- Notification Bell -->
-      <button class="header-icon-btn">
-        <i class="bi bi-bell"></i>
-      </button>
+      <app-notification-center></app-notification-center>
 
       <!-- User Info -->
       <div class="header-user">
