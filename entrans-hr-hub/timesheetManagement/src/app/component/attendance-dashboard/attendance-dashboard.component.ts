@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { ToastrService } from 'ngx-toastr';
+import { HotToastService } from '@ngneat/hot-toast';
 
 @Component({
   selector: 'app-attendance-dashboard',
@@ -13,7 +13,7 @@ export class AttendanceDashboardComponent implements OnInit {
   currentTime: Date = new Date();
   timer: any;
 
-  constructor(private http: HttpClient, private toastr: ToastrService) {}
+  constructor(private http: HttpClient, private toastr: HotToastService) {}
 
   ngOnInit(): void {
     this.fetchAttendance();

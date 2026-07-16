@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ServiceService } from '../Service/service.service';
-import { ToastrService } from 'ngx-toastr';
+import { HotToastService } from '@ngneat/hot-toast';
 
 interface Entry {
   top_status?: any;
@@ -32,7 +32,7 @@ export class ValidationTimesheetComponent {
   isFetchingData = false;
   selectAll = false;
 
-  constructor(private timesheetService: ServiceService, private toastrservice: ToastrService) {}
+  constructor(private timesheetService: ServiceService, private toastrservice: HotToastService) {}
 
   ngOnInit() {
     this.fetchData();
@@ -240,39 +240,27 @@ pushEmail(entry: Entry) {
       // Successful sends
       if (sent.length > 0) {
         this.toastrservice.success(
-          `Email sent to ${entry.user_name} for project "${entry.project_name}"`,
-          'Email Sent',
-          { toastClass: 'ngx-toastr custom-toast' }
-        );
+          `Email sent to ${entry.user_name} for project "${entry.project_name}"`);
       }
 
       // No flagged entries (warning prefix ⚠️)
       const noFlags = failed.filter((m: string) => m.startsWith('⚠️'));
       if (noFlags.length > 0) {
         this.toastrservice.info(
-          `No issues found — nothing to email for ${entry.user_name} on "${entry.project_name}"`,
-          'Nothing to Send',
-          { toastClass: 'ngx-toastr custom-toast' }
-        );
+          `No issues found — nothing to email for ${entry.user_name} on "${entry.project_name}"`);
       }
 
       // Actual SMTP failures (error prefix ❌)
       const smtpErrors = failed.filter((m: string) => m.startsWith('❌'));
       if (smtpErrors.length > 0) {
         this.toastrservice.error(
-          `Failed to send email to ${entry.user_name}`,
-          'Send Failed',
-          { toastClass: 'ngx-toastr custom-toast' }
-        );
+          `Failed to send email to ${entry.user_name}`);
       }
     },
     error: () => {
       entry.emailLoading = false;
       this.toastrservice.error(
-        'Failed to send email.',
-        '',
-        { toastClass: 'ngx-toastr custom-toast' }
-      );
+        'Failed to send email.');
     }
   });
 }

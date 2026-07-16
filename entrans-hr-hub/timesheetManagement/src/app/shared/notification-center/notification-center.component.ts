@@ -1,6 +1,6 @@
 import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { ToastrService } from 'ngx-toastr';
+import { HotToastService } from '@ngneat/hot-toast';
 
 @Component({
   selector: 'app-notification-center',
@@ -12,7 +12,7 @@ export class NotificationCenterComponent implements OnInit {
   unreadCount: number = 0;
   isOpen: boolean = false;
 
-  constructor(private http: HttpClient, private toastr: ToastrService, private eRef: ElementRef) {}
+  constructor(private http: HttpClient, private toastr: HotToastService, private eRef: ElementRef) {}
 
   ngOnInit(): void {
     this.fetchNotifications();

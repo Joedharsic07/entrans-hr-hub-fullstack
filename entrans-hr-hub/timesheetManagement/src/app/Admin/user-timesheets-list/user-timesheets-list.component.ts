@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ToastrService } from 'ngx-toastr';
+import { HotToastService } from '@ngneat/hot-toast';
 import { TimesheetService } from '../../timesheet/service/timesheet.service';
 
 @Component({
@@ -55,7 +55,7 @@ years: number[] = [];
     return this.userRole === 'Admin';
   }
 
-  constructor(private service: TimesheetService, private activatedRoute: ActivatedRoute,private toastr: ToastrService,private router:Router) { }
+  constructor(private service: TimesheetService, private activatedRoute: ActivatedRoute,private toastr: HotToastService,private router:Router) { }
   ngOnInit(): void {
     const currentYear = new Date().getFullYear();
     const futureYear = currentYear + 10;

@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ServiceService } from '../Service/service.service';
 import { saveAs } from 'file-saver';
-import { ToastrService } from 'ngx-toastr';
+import { HotToastService } from '@ngneat/hot-toast';
 @Component({
   selector: 'app-ppt-automation',
   templateUrl: './ppt-automation.component.html',
@@ -15,7 +15,7 @@ export class PptAutomationComponent {
   recentGenerations: any[] = [];
   isLoadingRecent = false;
 
-  constructor(private fb: FormBuilder, private Service: ServiceService, private toster: ToastrService) {
+  constructor(private fb: FormBuilder, private Service: ServiceService, private toster: HotToastService) {
     this.initializeForm();
     this.loadRecentGenerations();
   }

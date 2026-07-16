@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
-import { ToastrService } from 'ngx-toastr';
+import { HotToastService } from '@ngneat/hot-toast';
 import { ServiceService } from '../Service/service.service';
 
 interface ProjectUser {
@@ -80,7 +80,7 @@ export class ProjectMembersComponent implements OnInit, OnDestroy {
   private userSearch$ = new Subject<string>();
   private destroy$ = new Subject<void>();
 
-  constructor(private service: ServiceService, private router: Router, private toastr: ToastrService) {}
+  constructor(private service: ServiceService, private router: Router, private toastr: HotToastService) {}
 
   ngOnInit(): void {
     this.loadProjects();
@@ -225,29 +225,21 @@ export class ProjectMembersComponent implements OnInit, OnDestroy {
 
         if (emails_sent > 0) {
           this.toastr.success(
-            `Sent: ${emails_sent} &nbsp;|&nbsp; Skipped: ${emails_skipped} &nbsp;|&nbsp; Failed: ${emails_failed}<br>
-            <small>Period: ${period_start} → ${period_end}</small>`,
-            'Reminders Sent',
-            { enableHtml: true, timeOut: 5000 }
+            `Sent: ${emails_sent} | Skipped: ${emails_skipped} | Failed: ${emails_failed} - Period: ${period_start} to ${period_end}`
           );
         } else if (emails_skipped > 0 && emails_sent === 0) {
           this.toastr.info(
-            `All users are up to date — no missing timesheet entries found.<br>
-            <small>Period: ${period_start} → ${period_end}</small>`,
-            'Nothing to Send',
-            { enableHtml: true, timeOut: 5000 }
+            `All users are up to date — no missing timesheet entries found. Period: ${period_start} to ${period_end}`
           );
         } else {
           this.toastr.warning(
-            `No users with project assignments found, or all sends failed. Failed: ${emails_failed}`,
-            'No Reminders Sent',
-            { timeOut: 5000 }
+            `No users with project assignments found, or all sends failed. Failed: ${emails_failed}`
           );
         }
       },
       error: () => {
         this.reminderLoading = false;
-        this.toastr.error('Failed to send reminders. Check server logs.', 'Error');
+        this.toastr.error('Failed to send reminders. Check server logs.');
       }
     });
   }

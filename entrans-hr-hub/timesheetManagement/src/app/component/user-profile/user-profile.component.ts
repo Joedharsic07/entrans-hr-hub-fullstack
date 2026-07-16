@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { LoginService } from '../service/login.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HotToastService } from '@ngneat/hot-toast';
 
 @Component({
   selector: 'app-user-profile',
@@ -26,7 +27,7 @@ export class UserProfileComponent implements OnInit {
   editForm!: FormGroup;
   isSaving = false;
 
-  constructor(private loginService: LoginService, private fb: FormBuilder) {}
+  constructor(private loginService: LoginService, private fb: FormBuilder, private toast: HotToastService) {}
 
   ngOnInit(): void {
     this.editForm = this.fb.group({
@@ -132,10 +133,11 @@ export class UserProfileComponent implements OnInit {
         sessionStorage.setItem('profile', JSON.stringify(res.user));
         this.isSaving = false;
         this.showEditProfile = false;
+        this.toast.success('Profile updated successfully');
       },
       error: (err: any) => {
         this.isSaving = false;
-        alert('Failed to update profile');
+        this.toast.error('Failed to update profile');
       }
     });
   }

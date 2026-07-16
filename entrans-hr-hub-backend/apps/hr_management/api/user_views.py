@@ -225,3 +225,84 @@ class UserAccessLogView(APIView):
             for log in logs
         ]
         return Response(data)
+
+class UserRecentActivityView(APIView):
+    def get(self, request):
+        user = get_user_from_request(request)
+        if not user:
+            return Response(
+                {"error": "Authentication required"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        one_week_ago = timezone.now() - timedelta(days=7)
+        one_week_ago_date = timezone.now().date() - timedelta(days=7)
+
+        activities = []
+
+        # Access Logs
+        access_logs = user.access_logs.filter(timestamp__gte=one_week_ago).order_by('-timestamp')[:10]
+        for log in access_logs:
+            activities.append({
+                "action": "Login" if log.action == "login" else log.action.replace("_", " ").title(),
+                "timestamp": log.timestamp.isoformat(),
+                "status": log.status,
+                "timestamp_obj": log.timestamp
+            })
+
+        # Timesheets
+        from hr_management.models.timesheet import Timesheet
+        timesheets = Timesheet.objects.filter(user_project__user=user, updated_at__gte=one_week_ago).order_by('-updated_at')[:5]
+        for ts in timesheets:
+            activities.append({
+                "action": "Timesheet Submitted",
+                "timestamp": ts.updated_at.isoformat(),
+                "status": "success",
+                "timestamp_obj": ts.updated_at
+            })
+
+        # Leaves
+        from hr_management.models.leave import LeaveRequest
+        leaves = LeaveRequest.objects.filter(employee=user, applied_on__gte=one_week_ago).order_by('-applied_on')[:5]
+        for leave in leaves:
+            activities.append({
+                "action": "Leave Applied",
+                "timestamp": leave.applied_on.isoformat(),
+                "status": "success" if leave.status in ["pending", "approved"] else "failed",
+                "timestamp_obj": leave.applied_on
+            })
+            
+        # Attendance Logs
+        from hr_management.models.attendance import AttendanceLog
+        attendance_logs = AttendanceLog.objects.filter(employee=user, date__gte=one_week_ago_date).order_by('-date')[:5]
+        for att in attendance_logs:
+            timestamp_obj = att.clock_in if att.clock_in else None
+            # fallback to start of day if clock in missing but somehow we want to show it
+            if not timestamp_obj:
+                from datetime import datetime, time
+                timestamp_obj = timezone.make_aware(datetime.combine(att.date, time.min))
+                
+            activities.append({
+                "action": "Clocked In",
+                "timestamp": timestamp_obj.isoformat() if hasattr(timestamp_obj, 'isoformat') else str(timestamp_obj),
+                "status": "success",
+                "timestamp_obj": timestamp_obj
+            })
+
+        # Sort and limit
+        # Ensure timestamp_obj has timezone to compare
+        for act in activities:
+            if act["timestamp_obj"] and timezone.is_naive(act["timestamp_obj"]):
+                act["timestamp_obj"] = timezone.make_aware(act["timestamp_obj"])
+
+        activities = [a for a in activities if a["timestamp_obj"] is not None]
+        activities.sort(key=lambda x: x["timestamp_obj"], reverse=True)
+        top_activities = activities[:10]
+        
+        for act in top_activities:
+            del act["timestamp_obj"]
+            
+        return Response(top_activities)

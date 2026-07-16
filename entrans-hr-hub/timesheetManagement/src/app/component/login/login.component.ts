@@ -4,6 +4,7 @@ import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LoginService } from '../service/login.service';
 import { environment } from '../../../environment/environment';
+import { HotToastService } from '@ngneat/hot-toast';
 
 declare const google: any;
 
@@ -26,7 +27,7 @@ export class LoginComponent implements OnInit {
   isPwdEmpty: boolean = true; // variable for check whether the password field is empty
   passwordPattern: RegExp = /^(?=.*[!@#$%^&(),.*?":{}|<>])(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
 
-  constructor(private fb: FormBuilder, private router: Router, private service:LoginService, private http:HttpClient, private ngZone: NgZone) { }
+  constructor(private fb: FormBuilder, private router: Router, private service:LoginService, private http:HttpClient, private ngZone: NgZone, private toast: HotToastService) { }
 
   ngOnInit() {
     const savedEmail = localStorage.getItem('rememberedEmail');
@@ -75,14 +76,14 @@ export class LoginComponent implements OnInit {
           this.isGoogleLoading = false;
           console.error('Google login error:', err);
           if (err.status === 404) {
-            alert('No account found for this Google email. Please contact your administrator.');
+            this.toast.error('No account found for this Google email. Please contact your administrator.');
           } else if (err.status === 403) {
-            alert('Your account is inactive. Please contact your administrator.');
+            this.toast.error('Your account is inactive. Please contact your administrator.');
           } else if (err.status === 0) {
-            alert('Cannot reach the server. Make sure the backend is running on http://127.0.0.1:8000');
+            this.toast.error('Cannot reach the server. Make sure the backend is running on http://127.0.0.1:8000');
           } else {
             const msg = err.error?.message || err.error?.detail || JSON.stringify(err.error);
-            alert(`Google sign-in failed (${err.status}): ${msg}`);
+            this.toast.error(`Google sign-in failed (${err.status}): ${msg}`);
           }
         }
       });
@@ -116,10 +117,10 @@ export class LoginComponent implements OnInit {
 
         if (err.status === 401 || err.status === 400) {
           // Backend rejected credentials
-          alert("Invalid credentials");
+          this.toast.error("Invalid credentials");
         } else {
           // Other unexpected errors
-          alert("Something went wrong. Please try again.");
+          this.toast.error("Something went wrong. Please try again.");
         }
       }
     });

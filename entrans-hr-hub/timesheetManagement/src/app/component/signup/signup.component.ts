@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LoginService } from '../service/login.service';
+import { HotToastService } from '@ngneat/hot-toast';
 
 @Component({
   selector: 'app-signup',
@@ -10,7 +11,7 @@ import { LoginService } from '../service/login.service';
   styleUrl: './signup.component.css'
 })
 export class SignupComponent implements OnInit {
-  constructor(private fb: FormBuilder, private service: LoginService, private router: Router, private http: HttpClient) { }
+  constructor(private fb: FormBuilder, private service: LoginService, private router: Router, private http: HttpClient, private toast: HotToastService) { }
   signupForm!: FormGroup;
   isPasswordVisible: boolean = false;
   isconfirm_passwordVisible: boolean = false;
@@ -79,16 +80,16 @@ submit() {
   this.service.signup({ name, email, password, confirm_password, date_of_joining }).subscribe({
     next: (res) => {
       this.isLoading = false; 
-      alert('Registered Successfully');
+      this.toast.success('Registered Successfully');
       this.router.navigate(['/login']);
     },
     error: (err) => {
       this.isLoading = false; 
       if (err.status === 400) {
-        alert('Email already registered');
+        this.toast.error('Email already registered');
         this.router.navigate(['/login']);
       } else {
-        alert('Registration failed');
+        this.toast.error('Registration failed');
       }
     },
     complete: () => {

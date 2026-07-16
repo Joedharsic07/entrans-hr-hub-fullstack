@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { ToastrService } from 'ngx-toastr';
+import { HotToastService } from '@ngneat/hot-toast';
 import {
   ChartComponent,
   ApexAxisChartSeries,
@@ -40,7 +40,7 @@ export class AnalyticsDashboardComponent implements OnInit {
     missing_timesheets: 0
   };
 
-  constructor(private http: HttpClient, private toastr: ToastrService) {
+  constructor(private http: HttpClient, private toastr: HotToastService) {
     this.initializeEmptyCharts();
   }
 

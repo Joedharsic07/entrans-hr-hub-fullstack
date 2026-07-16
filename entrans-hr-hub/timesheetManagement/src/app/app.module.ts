@@ -12,7 +12,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HTTP_INTERCEPTORS, HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
 import {  AuthInterceptorService } from './shared/interceptor/auth.interceptor';
-import { ToastrModule } from 'ngx-toastr';
+import { provideHotToastConfig } from '@ngneat/hot-toast';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AdminComponent } from './Admin/admin/admin.component';
 import { TimesheetAutomationComponent } from './Admin/timesheetauto/timesheet-automation/timesheet-automation.component';
@@ -63,15 +63,46 @@ import { AnalyticsDashboardComponent } from './Admin/analytics-dashboard/analyti
     FormsModule,
     CommonModule,
     ReactiveFormsModule,
-    HttpClientModule ,
-    ToastrModule.forRoot({ positionClass: 'toast-top-right', timeOut: 3000, preventDuplicates: true}),
+    HttpClientModule,
     BrowserAnimationsModule,
     NgApexchartsModule,
     SharedModule
   ],
-  providers: [{ provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true,},AuthGuard
-
-],
+  providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptorService, multi: true },
+    AuthGuard,
+    provideHotToastConfig({ 
+      position: 'top-right', 
+      duration: 4000, 
+      stacking: 'depth',
+      visibleToasts: 4,
+      dismissible: true,
+      style: { 
+        padding: '16px 18px',
+        color: '#111827',
+        background: '#ffffff',
+        borderRadius: '16px',
+        boxShadow: '0 12px 40px rgba(0, 0, 0, 0.10)',
+        fontWeight: '600',
+        fontSize: '15px',
+        border: '1px solid rgba(0,0,0,0.06)',
+        maxWidth: '380px',
+        minWidth: '340px'
+      },
+      success: { 
+        iconTheme: { primary: '#ECFDF3', secondary: '#12B76A' }
+      },
+      error: { 
+        iconTheme: { primary: '#FEF3F2', secondary: '#F04438' }
+      },
+      info: { 
+        iconTheme: { primary: '#EFF8FF', secondary: '#1570EF' }
+      },
+      warning: { 
+        iconTheme: { primary: '#FFF7E6', secondary: '#F79009' }
+      }
+    })
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

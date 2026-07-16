@@ -6,7 +6,7 @@ from .api.auth_views import (
 )
 from .api.user_views import (
     UserListAPIView, MeView, CreateUserView, UserAdminView,
-    UserAdminDetailView, UserAccessLogView
+    UserAdminDetailView, UserAccessLogView, UserRecentActivityView
 )
 from .api.project_views import (
     ProjectListCreateView, ProjectDetailView, UserProjectListCreateView,
@@ -102,6 +102,7 @@ urlpatterns = [
     ),
     path("me/", MeView.as_view(), name="me"),
     path("access-logs/", UserAccessLogView.as_view(), name="access-logs"),
+    path("user-recent-activities/", UserRecentActivityView.as_view(), name="user-recent-activities"),
     path("create-user/", CreateUserView.as_view(), name="create-user"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("admin-users/", UserAdminView.as_view(), name="admin-users"),

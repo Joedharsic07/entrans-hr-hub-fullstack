@@ -22,7 +22,7 @@ export class ActivityTimelineComponent implements OnInit {
     // In a real app, there would be a dedicated endpoint for activity logs.
     // Assuming backend endpoint /api/access-logs/ or /api/activities/ exists.
     // For now, I'll fetch access-logs as a proxy, or an 'activities' endpoint.
-    let url = 'http://127.0.0.1:8000/api/access-logs/';
+    let url = 'http://127.0.0.1:8000/api/user-recent-activities/';
     if (this.userId) {
       url += `?user_id=${this.userId}`;
     }

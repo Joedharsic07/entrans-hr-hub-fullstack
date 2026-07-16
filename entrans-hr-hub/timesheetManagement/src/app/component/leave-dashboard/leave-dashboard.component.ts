@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { ToastrService } from 'ngx-toastr';
+import { HotToastService } from '@ngneat/hot-toast';
 import { ServiceService } from '../../shared/Authguard/service.service';
 import { environment } from '../../../environment/environment';
 
@@ -24,7 +24,7 @@ export class LeaveDashboardComponent implements OnInit {
 
   constructor(
     private http: HttpClient, 
-    private toastr: ToastrService,
+    private toastr: HotToastService,
     private authService: ServiceService
   ) {
     this.isAdmin = this.authService.isAdmin();
