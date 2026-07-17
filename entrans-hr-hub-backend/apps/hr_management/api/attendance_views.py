@@ -5,12 +5,27 @@ from hr_management.services.attendance_service import AttendanceService
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderServiceError
 
+from rest_framework.pagination import PageNumberPagination
+
+class AttendancePagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class AttendanceLogListView(generics.ListAPIView):
     serializer_class = AttendanceLogSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         return AttendanceService.get_logs(self.request.user)
+
+    @property
+    def paginator(self):
+        if 'page' in self.request.query_params or 'page_size' in self.request.query_params:
+            if not hasattr(self, '_paginator'):
+                self._paginator = AttendancePagination()
+            return self._paginator
+        return None
 
 class ClockInView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]

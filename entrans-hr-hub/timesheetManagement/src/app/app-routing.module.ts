@@ -1,126 +1,41 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { LoginComponent } from './component/login/login.component';
-import { SignupComponent } from './component/signup/signup.component';
-import { TimesheetComponent } from './timesheet/timesheet/timesheet.component';
-import { AdminComponent } from './Admin/admin/admin.component';
-import { TimesheetAutomationComponent } from './Admin/timesheetauto/timesheet-automation/timesheet-automation.component';
-import { PptAutomationComponent } from './Admin/ppt-automation/ppt-automation.component';
-import { SidebarComponent } from './Admin/sidebar/sidebar.component';
-import { AuthGuard } from './shared/Auth/auth.guard';
-import { ResetPasswordComponent } from './component/reset-password/reset-password.component';
-import { ConfrimResetPasswordComponent } from './component/confrim-reset-password/confrim-reset-password.component';
-import { UserProfileComponent } from './component/user-profile/user-profile.component';
-import { UserTimesheetsListComponent } from './Admin/user-timesheets-list/user-timesheets-list.component';
-import { CreateProjectComponent } from './Admin/create-project/create-project.component';
-import { ValidationTimesheetComponent } from './Admin/validation-timesheet/validation-timesheet.component';
-import { ProjectMembersComponent } from './Admin/project-members/project-members.component';
-import { CreateUserComponent } from './Admin/create-user/create-user.component';
-import { UserListComponent } from './Admin/user-list/user-list.component';
-import { LeaveDashboardComponent } from './component/leave-dashboard/leave-dashboard.component';
-import { AttendanceDashboardComponent } from './component/attendance-dashboard/attendance-dashboard.component';
 
-const routes: Routes = [{
-  path: '',
-  redirectTo: 'login',
-  pathMatch: 'full'
-},
-{
-  path: 'user-profile',
-  component: UserProfileComponent,
-},
-{
-  path: 'login',
-  component: LoginComponent
-},
-{
-  path: 'signup',
-  component: SignupComponent
-},
-{
-  path: 'timesheet/:id',
-  component: TimesheetComponent,
-
-},
-{
-  path: 'admin',
-  component: AdminComponent,
-
-},
-{
-  path: 'timesheet',
-  component: TimesheetAutomationComponent,
-  canActivate: [AuthGuard],
-  data: { roles: ['user', 'Admin'] }
-},
-{
-  path: 'ppt-automation',
-  component: PptAutomationComponent,
-  canActivate: [AuthGuard],
-  data: { roles: ['user', 'Admin'] }
-},
-{
-  path: 'sidebar',
-  component: SidebarComponent,
-  canActivate: [AuthGuard],
-  data: { roles: ['user', 'Admin'] }
-},
-{
-  path: 'password_reset',
-  component: ResetPasswordComponent
-},
-{
-  path: 'reset-password',
-  component: ConfrimResetPasswordComponent
-},
-{
-  path: 'user-timesheets-list',
-  component: UserTimesheetsListComponent,
-},
-{
-  path: 'user-timesheet/:userProjectId/:projectId',
-  component: UserTimesheetsListComponent
-},
-{
-  path: 'create-project',
-  component: CreateProjectComponent,
-  canActivate: [AuthGuard],
-  data: { roles: ['user', 'Admin'] }
-},
-{
-  path: 'validation-timesheet',
-  component: ValidationTimesheetComponent,
-  canActivate: [AuthGuard],
-  data: { roles: ['user', 'Admin'] }
-},
-{
-  path: 'project-members',
-  component: ProjectMembersComponent,
-  canActivate: [AuthGuard],
-  data: { roles: ['Admin'] }
-},
-{
-  path: 'create-user',
-  component: CreateUserComponent,
-  canActivate: [AuthGuard],
-  data: { roles: ['Admin'] }
-},
-{
-  path: 'user-list',
-  component: UserListComponent,
-  canActivate: [AuthGuard],
-  data: { roles: ['Admin'] }
-},
-{
-  path: 'leaves',
-  component: LeaveDashboardComponent,
-  canActivate: [AuthGuard]
-},
-{
-  path: 'attendance',
-  component: AttendanceDashboardComponent,
-  canActivate: [AuthGuard]
-}
+const routes: Routes = [
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  {
+    path: '',
+    loadChildren: () => import('@features/authentication/authentication.module').then(m => m.AuthenticationModule)
+  },
+  {
+    path: '',
+    loadChildren: () => import('@features/admin/admin.module').then(m => m.AdminModule)
+  },
+  {
+    path: '',
+    loadChildren: () => import('@features/analytics/analytics.module').then(m => m.AnalyticsModule)
+  },
+  {
+    path: '',
+    loadChildren: () => import('@features/attendance/attendance.module').then(m => m.AttendanceModule)
+  },
+  {
+    path: '',
+    loadChildren: () => import('@features/leaves/leaves.module').then(m => m.LeavesModule)
+  },
+  {
+    path: '',
+    loadChildren: () => import('@features/profile/profile.module').then(m => m.ProfileModule)
+  },
+  {
+    path: '',
+    loadChildren: () => import('@features/projects/projects.module').then(m => m.ProjectsModule)
+  },
+  {
+    path: '',
+    loadChildren: () => import('@features/timesheets/timesheets.module').then(m => m.TimesheetsModule)
+  },
+  { path: '**', redirectTo: 'login', pathMatch: 'full' }
 ];
 
 @NgModule({

@@ -25,7 +25,7 @@ from .api.admin_dashboard_views import (
 )
 from .api.leave_views import LeaveRequestListCreateView, LeaveRequestDetailView, LeaveBalanceListView
 from .api.attendance_views import AttendanceLogListView, ClockInView, ClockOutView
-from .api.notification_views import NotificationListView, NotificationReadView, NotificationDeleteView
+from .api.notification_views import NotificationListView, NotificationReadView, NotificationDeleteView, NotificationStreamView
 from .api.analytics_views import AnalyticsDashboardView
 from .api.export_views import ExportAttendanceView, ExportLeaveView
 from .api.search_views import GlobalSearchView
@@ -122,6 +122,7 @@ urlpatterns = [
     path("attendance/clock-out/", ClockOutView.as_view(), name="attendance-clock-out"),
     
     path("notifications/", NotificationListView.as_view(), name="notification-list"),
+    path("notifications/stream/", NotificationStreamView.as_view(), name="notification-stream"),
     path("notifications/read/", NotificationReadView.as_view(), name="notification-read-all"),
     path("notifications/<int:pk>/read/", NotificationReadView.as_view(), name="notification-read-single"),
     path("notifications/<int:pk>/", NotificationDeleteView.as_view(), name="notification-delete"),

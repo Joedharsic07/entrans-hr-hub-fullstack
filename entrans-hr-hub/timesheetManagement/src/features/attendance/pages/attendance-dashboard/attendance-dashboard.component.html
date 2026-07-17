@@ -1,0 +1,391 @@
+<app-page-container>
+  <app-page-header pageTitle="Attendance Dashboard"
+    pageSubtitle="Track your daily attendance metrics, punch logs, and leave utilization.">
+    <!-- Punch In / Out buttons -->
+    <button actions *ngIf="!todayLog?.clock_in" (click)="punchIn()" [disabled]="isPunching"
+      class="bg-[#0b57d0] hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center gap-2 shadow-sm disabled:opacity-75">
+      <i class="bi bi-box-arrow-in-right"></i>
+      <span *ngIf="isPunching" class="inline-block animate-spin mr-1">⟳</span> Punch In
+    </button>
+    <button actions *ngIf="todayLog?.clock_in && !todayLog?.clock_out" (click)="punchOut()" [disabled]="isPunching"
+      class="bg-[#0b57d0] hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all flex items-center gap-2 shadow-sm disabled:opacity-75">
+      <i class="bi bi-box-arrow-right"></i>
+      <span *ngIf="isPunching" class="inline-block animate-spin mr-1">⟳</span> Punch Out
+    </button>
+  </app-page-header>
+
+  <div class="dashboard-body">
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+
+      <!-- Left Column: Calendar (col-span-2) -->
+      <div class="xl:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col">
+        <!-- Calendar Header -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div class="flex items-center gap-4">
+            <h2 class="text-2xl font-bold text-gray-900">{{ currentMonth | date:'MMMM yyyy' }}</h2>
+            <div class="flex items-center gap-2">
+              <button (click)="previousMonth()" class="text-gray-400 hover:text-gray-700 transition-colors">
+                <i class="bi bi-chevron-left text-sm font-bold"></i>
+              </button>
+              <button (click)="nextMonth()" class="text-gray-400 hover:text-gray-700 transition-colors">
+                <i class="bi bi-chevron-right text-sm font-bold"></i>
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-wrap items-center gap-6">
+            <!-- Legend -->
+            <div class="flex items-center gap-4 text-xs font-semibold text-gray-600">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-blue-600"></span> Working
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-red-600"></span> Absent
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Present
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-cyan-500"></span> SL
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-purple-500"></span> EL
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Day Headers -->
+        <div class="grid grid-cols-7 gap-3 mb-4 text-center">
+          <div *ngFor="let day of weekDays" class="text-xs font-bold text-gray-400 uppercase tracking-wide">
+            {{ day }}
+          </div>
+        </div>
+
+        <!-- Skeleton Loading Calendar Grid -->
+        <div *ngIf="isLoadingCalendar" class="grid grid-cols-7 gap-3 text-left">
+          <div
+            *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]"
+            class="aspect-[4/3] w-full h-full rounded-xl bg-gray-100 animate-pulse border border-gray-200"></div>
+        </div>
+
+        <!-- New Premium Calendar Grid -->
+        <div *ngIf="!isLoadingCalendar" class="grid grid-cols-7 gap-3 text-left">
+          <div *ngFor="let day of calendarDays; let i = index" class="relative group aspect-[4/3]">
+
+            <!-- Empty padding days -->
+            <div *ngIf="!day" class="w-full h-full rounded-xl border border-dashed border-gray-200 bg-gray-50/30"></div>
+
+            <!-- Actual days -->
+            <ng-container *ngIf="day">
+              <!-- The Day Card -->
+              <div (click)="toggleTooltip(day)"
+                class="w-full h-full rounded-xl flex flex-col justify-between p-2.5 transition-all duration-300 cursor-pointer"
+                [ngClass]="{
+                      'bg-[#0b57d0] text-white shadow-md shadow-blue-500/20 scale-[1.02] z-10': day.isToday,
+                      'bg-gray-50 border border-gray-100 hover:border-gray-200': !day.isToday && !day.isFuture,
+                      'bg-gray-50/50 border border-gray-50 text-gray-400 pointer-events-none opacity-60': day.isFuture,
+                      'ring-2 ring-blue-500 ring-offset-2': selectedDay === day
+                    }">
+
+                <span class="text-sm font-semibold transition-colors"
+                  [ngClass]="day.isToday ? 'text-white' : 'text-gray-800'">
+                  {{ day.date }}
+                </span>
+
+                <!-- Status Indicator below the number -->
+                <div class="self-end">
+                  <span *ngIf="day.status === 'W'" class="block w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                  <span *ngIf="day.status === 'A'" class="block w-1.5 h-1.5 rounded-full bg-red-600"></span>
+                  <span *ngIf="day.status === 'P' || day.status === 'H'"
+                    class="block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span *ngIf="day.status === 'SL'" class="block w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+                  <span *ngIf="day.status === 'EL'" class="block w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                  <span *ngIf="day.status === 'L'" class="block w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                </div>
+              </div>
+
+              <!-- Detailed Logs Tooltip (Click to toggle) -->
+              <div
+                class="absolute bottom-[calc(100%+8px)] left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl z-30 flex flex-col min-w-[170px] transition-all duration-200"
+                *ngIf="selectedDay === day">
+                <div class="flex justify-between items-center mb-2 border-b border-slate-700 pb-2">
+                  <span class="font-bold text-xs">{{ day.fullDate | date:'MMM d, yyyy' }}</span>
+                  <span class="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded" [ngClass]="{
+                            'bg-emerald-500/20 text-emerald-300': day.status === 'P', 
+                            'bg-red-500/20 text-red-300': day.status === 'A',
+                            'bg-blue-500/20 text-blue-300': day.status === 'W',
+                            'bg-cyan-500/20 text-cyan-400': day.status === 'SL',
+                            'bg-purple-500/20 text-purple-300': day.status === 'EL',
+                            'bg-orange-500/20 text-orange-300': day.status === 'L'
+                          }">
+                    {{ day.status === 'P' ? 'Present' : day.status === 'A' ? 'Absent' : day.status === 'W' ? 'Weekend'
+                    : day.status === 'SL' ? 'Sick Leave' : day.status === 'EL' ? 'Earned Leave' : day.status === 'L' ? 'On Leave' : 'Half Day' }}
+                  </span>
+                </div>
+
+                <ng-container *ngIf="day.log; else noLog">
+                  <div class="flex justify-between items-center mb-1 text-xs">
+                    <span class="text-slate-400 font-medium">In:</span>
+                    <span class="font-bold">{{ (day.log.clock_in | date:'hh:mm a') || '--' }}</span>
+                  </div>
+                  <div class="flex justify-between items-center mb-2 text-xs">
+                    <span class="text-slate-400 font-medium">Out:</span>
+                    <span class="font-bold">{{ (day.log.clock_out | date:'hh:mm a') || '--' }}</span>
+                  </div>
+                  <div
+                    class="flex justify-between items-center font-bold text-blue-300 pt-2 border-t border-slate-700 text-xs">
+                    <span>Total:</span>
+                    <span>{{ day.totalHours | number:'1.2-2' }}h</span>
+                  </div>
+                </ng-container>
+                <ng-template #noLog>
+                  <div class="text-center text-slate-400 text-xs py-3 font-medium">No logs recorded</div>
+                </ng-template>
+
+                <!-- tiny triangle pointing down -->
+                <div class="absolute -bottom-1.5 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-slate-900 rotate-45">
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- Detailed Log divider -->
+        <div class="mt-8 pt-6 border-t border-gray-100">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-gray-900">Detailed Logs</h3>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-white border-b border-gray-100">
+                  <th class="py-3 px-4 font-bold text-gray-500 text-xs uppercase tracking-wide">Date</th>
+                  <th class="py-3 px-4 font-bold text-gray-500 text-xs uppercase tracking-wide">Punch In</th>
+                  <th class="py-3 px-4 font-bold text-gray-500 text-xs uppercase tracking-wide">Punch Out</th>
+                  <th class="py-3 px-4 font-bold text-gray-500 text-xs uppercase tracking-wide text-right">Total Hours
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <!-- Skeleton Loading Rows -->
+                <ng-container *ngIf="isLoadingLogs">
+                  <tr *ngFor="let i of [1,2,3]"
+                    class="animate-pulse hover:bg-gray-50/50 transition-colors duration-200">
+                    <td class="py-4 px-4">
+                      <div class="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+                      <div class="h-3 bg-gray-200 rounded w-16"></div>
+                    </td>
+                    <td class="py-4 px-4">
+                      <div class="h-4 bg-gray-200 rounded w-16"></div>
+                    </td>
+                    <td class="py-4 px-4">
+                      <div class="h-4 bg-gray-200 rounded w-16"></div>
+                    </td>
+                    <td class="py-4 px-4 text-right">
+                      <div class="h-4 bg-gray-200 rounded w-16 ml-auto"></div>
+                    </td>
+                  </tr>
+                </ng-container>
+
+                <!-- Real Data Rows -->
+                <ng-container *ngIf="!isLoadingLogs">
+                  <tr *ngFor="let log of paginatedLogs" class="hover:bg-gray-50/50 transition-colors duration-200">
+                    <td class="py-4 px-4">
+                      <div class="font-bold text-gray-900 text-sm">{{log.date | date:'MMM d, yyyy'}}</div>
+                      <div class="text-[10px] font-bold text-amber-600 mt-1 uppercase tracking-wider"
+                        *ngIf="log.is_late_login">Late Login</div>
+                      <div class="text-[10px] font-bold text-amber-600 mt-0.5 uppercase tracking-wider"
+                        *ngIf="log.is_early_logout">Early Logout</div>
+                    </td>
+                    <td class="py-4 px-4 text-sm font-semibold"
+                      [ngClass]="log.clock_in ? 'text-gray-700' : 'text-red-500'">
+                      <ng-container *ngIf="log.clock_in; else absentIn">
+                        {{ log.clock_in | date:'hh:mm a' }}
+                      </ng-container>
+                      <ng-template #absentIn>
+                        <i class="bi bi-slash-circle"></i> Absent
+                      </ng-template>
+                    </td>
+                    <td class="py-4 px-4 text-sm font-semibold text-gray-700">
+                      {{ log.clock_out ? (log.clock_out | date:'hh:mm a') : (log.clock_in ? 'Pending' : '-') }}
+                    </td>
+                    <td class="py-4 px-4 text-right">
+                      <span class="text-sm font-bold text-gray-900">
+                        {{log.total_working_hours | number:'1.1-1' || '0.0'}} hrs
+                      </span>
+                    </td>
+                  </tr>
+                  <tr *ngIf="paginatedLogs.length === 0">
+                    <td colspan="4" class="py-8 text-center text-gray-500 text-sm font-medium">
+                      No attendance records found.
+                    </td>
+                  </tr>
+                </ng-container>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div *ngIf="paginatedLogs.length > 0"
+            class="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-200 bg-white gap-4 rounded-b-2xl">
+            <p class="text-xs font-semibold text-slate-500">
+              Showing <span class="font-bold text-slate-800">{{ totalCount === 0 ? 0 : ((currentPage - 1) * pageSize +
+                1) }} -
+                {{ (currentPage * pageSize) > totalCount ? totalCount : (currentPage * pageSize) }}</span> of {{
+              totalCount | number
+              }} logs
+            </p>
+            <div class="flex items-center gap-1.5" *ngIf="totalPages > 1">
+              <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1"
+                class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm bg-white">
+                <i class="bi bi-chevron-left text-[10px]"></i>
+              </button>
+              <ng-container *ngFor="let p of pageNumbers">
+                <span *ngIf="p === -1"
+                  class="w-8 h-8 flex items-center justify-center text-slate-400 text-xs font-bold">...</span>
+                <button *ngIf="p !== -1" (click)="goToPage(p)"
+                  class="w-8 h-8 rounded-lg text-xs font-bold transition-colors shadow-sm"
+                  [ngClass]="p === currentPage ? 'bg-[#0b57d0] text-white border border-[#0b57d0]' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'">
+                  {{ p }}
+                </button>
+              </ng-container>
+              <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages"
+                class="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors shadow-sm bg-white">
+                <i class="bi bi-chevron-right text-[10px]"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Today's Summary (col-span-1) -->
+      <div class="xl:col-span-1 flex flex-col gap-6">
+        <!-- Today's Summary Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+          <div class="flex items-center gap-2 mb-6">
+            <i class="bi bi-clock text-[#0b57d0] text-xl"></i>
+            <h2 class="text-xl font-bold text-gray-900">Today's Summary</h2>
+          </div>
+
+          <div class="space-y-4">
+            <!-- Punch In Card -->
+            <div class="bg-gray-50 rounded-xl p-4 flex items-center justify-between border border-gray-100">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-lg bg-white shadow-sm text-[#0b57d0] flex items-center justify-center">
+                  <i class="bi bi-box-arrow-in-right text-lg"></i>
+                </div>
+                <div>
+                  <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Punch In</div>
+                  <div class="text-lg font-bold text-gray-900">{{ todayLog?.clock_in ? (todayLog.clock_in | date:'hh:mm
+                    a') : '--:--' }}</div>
+                </div>
+              </div>
+              <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                *ngIf="todayLog?.clock_in"
+                [ngClass]="todayLog?.is_late_login ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'">
+                {{ todayLog?.is_late_login ? 'Late' : 'On Time' }}
+              </span>
+            </div>
+
+            <!-- Punch Out Card -->
+            <div class="bg-gray-50 rounded-xl p-4 flex items-center justify-between border border-gray-100">
+              <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-lg bg-white shadow-sm text-gray-400 flex items-center justify-center">
+                  <i class="bi bi-box-arrow-right text-lg"></i>
+                </div>
+                <div>
+                  <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Punch Out</div>
+                  <div class="text-lg font-bold" [ngClass]="todayLog?.clock_out ? 'text-gray-900' : 'text-gray-400'">
+                    {{ todayLog?.clock_out ? (todayLog.clock_out | date:'hh:mm a') : 'Pending' }}
+                  </div>
+                </div>
+              </div>
+              <ng-container *ngIf="todayLog?.clock_out; else pendingStatus">
+                <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider"
+                  [ngClass]="todayLog?.is_early_logout ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'">
+                  {{ todayLog?.is_early_logout ? 'Early' : 'On Time' }}
+                </span>
+              </ng-container>
+              <ng-template #pendingStatus>
+                <span
+                  class="px-2 py-1 rounded-md bg-gray-200 text-gray-600 text-[10px] font-bold uppercase tracking-wider">Pending</span>
+              </ng-template>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 pt-2">
+              <!-- Total Hours -->
+              <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col justify-center">
+                <div class="text-[10px] font-bold text-[#0b57d0] uppercase tracking-wider mb-1">Total Hours</div>
+                <div class="flex items-baseline gap-1">
+                  <span class="text-2xl font-extrabold text-[#0b57d0] tracking-tight leading-none">{{ liveTotalHours }}</span>
+                </div>
+              </div>
+              <!-- Status -->
+              <div class="rounded-xl p-4 flex flex-col justify-center border" [ngClass]="todayStatusClasses.card">
+                <div class="text-[10px] font-bold uppercase tracking-wider mb-1" [ngClass]="todayStatusClasses.text">Status</div>
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full" [ngClass]="todayStatusClasses.dot"></span>
+                  <span class="font-extrabold text-lg" [ngClass]="todayStatusClasses.text">{{ todayStatus }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leave Balances Card -->
+        <div class="bg-[#313338] rounded-2xl p-8 text-white shadow-md flex-1 flex flex-col justify-center relative">
+          <div class="flex items-center gap-3 mb-8 relative z-10">
+            <i class="bi bi-calendar-check text-xl"></i>
+            <h3 class="font-bold text-xl tracking-tight">Leave Balance</h3>
+          </div>
+
+          <div class="space-y-6 relative z-10 flex-1">
+            <!-- Sick Leave -->
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-sm font-bold text-white">Sick Leave</div>
+                  <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Carries forward
+                    monthly, resets yearly</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xl font-extrabold text-white">{{ sickLeaveBalance?.remaining_days || '0.0' }}</div>
+                  <div class="text-[10px] text-gray-400 font-semibold uppercase">Total: {{ sickLeaveBalance?.total_days
+                    || '0.0' }}</div>
+                </div>
+              </div>
+              <div class="h-2 w-full bg-gray-600 rounded-full overflow-hidden">
+                <div class="h-full bg-gray-400 rounded-full"
+                  [style.width.%]="sickLeaveBalance ? (sickLeaveBalance.remaining_days / sickLeaveBalance.total_days) * 100 : 0">
+                </div>
+              </div>
+            </div>
+
+            <!-- Earned Leave -->
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-sm font-bold text-white">Earned Leave</div>
+                  <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Carries forward yearly
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xl font-extrabold text-white">{{ earnedLeaveBalance?.remaining_days || '0.0' }}</div>
+                  <div class="text-[10px] text-gray-400 font-semibold uppercase">Total: {{
+                    earnedLeaveBalance?.total_days || '0.0' }}</div>
+                </div>
+              </div>
+              <div class="h-2 w-full bg-gray-600 rounded-full overflow-hidden">
+                <div class="h-full bg-[#8b9ff7] rounded-full"
+                  [style.width.%]="earnedLeaveBalance ? (earnedLeaveBalance.remaining_days / earnedLeaveBalance.total_days) * 100 : 0">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-page-container>

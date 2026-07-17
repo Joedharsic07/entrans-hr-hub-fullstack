@@ -1,0 +1,197 @@
+<app-page-container>
+  <div class="dashboard-body">
+    <div class="mx-auto flex flex-col gap-4">
+
+      <!-- Back Button -->
+      <div>
+        <button (click)="navigateToTimesheet()"
+          class="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-primary transition-colors focus:outline-none bg-transparent border-0 cursor-pointer">
+          <i class="bi bi-arrow-left"></i>
+          Back to Overview
+        </button>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200/60 overflow-hidden flex flex-col">
+
+        <!-- Document Header Area -->
+        <div class="p-4 md:p-5 border-b border-slate-200/60 bg-white relative">
+          <div class="absolute top-0 left-0 w-full h-1 bg-primary"></div>
+
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="flex items-center gap-3">
+              <div
+                class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20">
+                <i class="bi bi-folder-fill text-base text-primary"></i>
+              </div>
+              <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Project</p>
+                <h2 class="text-lg font-extrabold text-slate-900 m-0">{{ projectName || 'Detailed View' }}</h2>
+              </div>
+            </div>
+
+            <!-- Month Navigator & Stats -->
+            <div class="flex flex-col sm:flex-row items-center gap-4 md:gap-8 bg-slate-50 p-3 px-5 rounded-xl border border-slate-200 w-full sm:w-auto">
+              <!-- Month Navigator -->
+              <div class="flex items-center gap-4 border-b sm:border-b-0 sm:border-r border-slate-200 pb-3 sm:pb-0 pr-0 sm:pr-8 w-full sm:w-auto justify-between sm:justify-start">
+                <button
+                  class="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-slate-200 hover:border-primary/50 text-slate-500 hover:text-primary transition-all focus:outline-none shadow-sm cursor-pointer"
+                  (click)="goToPreviousMonth()">
+                  <i class="bi bi-chevron-left text-sm font-bold"></i>
+                </button>
+                <div class="flex flex-col items-center min-w-[100px]">
+                  <span class="text-base font-bold text-slate-800">{{ months[selectedMonth] }}</span>
+                  <span class="text-xs font-semibold text-slate-400">{{ selectedYear }}</span>
+                </div>
+                <button
+                  class="w-8 h-8 rounded-full flex items-center justify-center bg-white border border-slate-200 hover:border-primary/50 text-slate-500 hover:text-primary transition-all focus:outline-none shadow-sm cursor-pointer"
+                  (click)="goToNextMonth()">
+                  <i class="bi bi-chevron-right text-sm font-bold"></i>
+                </button>
+              </div>
+
+              <!-- Stats -->
+              <div class="flex gap-8 w-full sm:w-auto justify-around sm:justify-start">
+                <div class="flex flex-col">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Duration</span>
+                  <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-extrabold text-slate-800">{{ statistics?.total_duration || 0 }}</span>
+                    <span class="text-xs font-bold text-slate-500">hrs</span>
+                  </div>
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Leave Days</span>
+                  <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-extrabold text-slate-800">{{ statistics?.leave_days || 0 }}</span>
+                    <span class="text-xs font-bold text-slate-500">days</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- View-only banner for admins -->
+          <div *ngIf="isReadOnly"
+            class="mt-4 flex items-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm font-semibold w-fit">
+            <i class="bi bi-eye text-amber-500 text-base"></i>
+            View-only mode — you are viewing this user's timesheet as an admin.
+          </div>
+        </div>
+
+        <!-- Timesheet Grid -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 border-b border-slate-200">
+            <thead class="bg-slate-50 sticky top-0 z-10 shadow-sm border-b border-slate-200">
+              <tr>
+                <th scope="col" class="px-5 py-4 w-32 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b">Date</th>
+                <th scope="col" class="px-5 py-4 w-48 text-left text-xs font-bold text-slate-500 uppercase tracking-wider border-b">Task</th>
+                <th scope="col" class="px-5 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[300px] border-b">Description</th>
+                <th scope="col" class="px-5 py-4 w-24 text-center text-xs font-bold text-slate-500 uppercase tracking-wider border-b">Hours</th>
+                <th scope="col" class="px-5 py-4 w-36 text-center text-xs font-bold text-slate-500 uppercase tracking-wider border-b">Type</th>
+              </tr>
+            </thead>
+
+            <tbody class="bg-white divide-y divide-slate-100">
+              <!-- Empty State -->
+              <tr *ngIf="!dayDetails || dayDetails.length === 0">
+                <td colspan="5" class="py-12 text-center text-slate-500">
+                  <i class="bi bi-inbox text-4xl text-slate-300 mb-3 block"></i>
+                  <p class="font-bold text-lg text-slate-700">No timesheet records found for this period.</p>
+                </td>
+              </tr>
+
+              <!-- Data Rows -->
+              <tr *ngFor="let day of dayDetails; let i = index" [ngClass]="getRowClass(day)"
+                class="hover:bg-slate-50 transition-colors group">
+
+                <!-- Date -->
+                <td class="px-5 py-3 whitespace-nowrap align-middle border-r border-slate-100">
+                  <div class="flex flex-col items-start justify-center">
+                    <span class="text-sm font-bold text-slate-800">{{ day.dateFormatted | date: 'd MMM' }}</span>
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">{{ day.dayName | slice:0:3 }}</span>
+                    <!-- Future date lock indicator -->
+                    <span *ngIf="!isReadOnly && isDateFuture(day.dateFormatted)"
+                      class="flex items-center gap-1 text-[10px] font-semibold text-slate-400 mt-0.5">
+                      <i class="bi bi-lock-fill text-slate-300"></i>
+                      Future
+                    </span>
+                    <!-- Auto-save status indicator -->
+                    <span *ngIf="!isReadOnly && !isDateFuture(day.dateFormatted) && savingRowIds.has(day.dateFormatted)"
+                      class="flex items-center gap-1 text-[10px] font-semibold text-primary mt-0.5">
+                      <span class="inline-block w-2.5 h-2.5 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
+                      Saving...
+                    </span>
+                    <span *ngIf="!isReadOnly && !isDateFuture(day.dateFormatted) && savedRowIds.has(day.dateFormatted)"
+                      class="flex items-center gap-1 text-[10px] font-semibold text-green-600 mt-0.5">
+                      <i class="bi bi-check-circle-fill text-green-500"></i>
+                      Saved
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Task Name -->
+                <td class="px-5 py-3 align-middle border-r border-slate-100">
+                  <input *ngIf="!isReadOnly && !isDateFuture(day.dateFormatted)"
+                    [(ngModel)]="day.task_name" type="text"
+                    (blur)="autoSave(day)"
+                    placeholder="Enter task..."
+                    class="w-full bg-transparent border-0 border-b border-slate-200 focus:border-primary focus:outline-none text-sm text-slate-700 placeholder-slate-300 py-0.5 px-0 transition-colors" />
+                  <span *ngIf="isReadOnly || isDateFuture(day.dateFormatted)"
+                    class="text-sm font-semibold leading-tight block truncate max-w-[180px]"
+                    [ngClass]="isDateFuture(day.dateFormatted) ? 'text-slate-300' : 'text-slate-700'">
+                    {{ day.task_name || '-' }}
+                  </span>
+                </td>
+
+                <!-- Description -->
+                <td class="px-5 py-3 align-middle border-r border-slate-100">
+                  <textarea [(ngModel)]="day.description"
+                    [readonly]="isReadOnly || isDateFuture(day.dateFormatted)"
+                    (blur)="autoSave(day)"
+                    class="w-full border-none text-sm focus:ring-0 resize-none overflow-hidden p-0 leading-relaxed placeholder-slate-300 min-h-[30px] bg-transparent transition-colors"
+                    [ngClass]="isDateFuture(day.dateFormatted) ? 'text-slate-300' : 'text-slate-600'"
+                    placeholder="No description provided"
+                    [rows]="getDescriptionRowCount(day.description)"></textarea>
+                </td>
+
+                <!-- Hours -->
+                <td class="px-5 py-3 text-center whitespace-nowrap align-middle border-r border-slate-100">
+                  <input *ngIf="!isReadOnly && !isDateFuture(day.dateFormatted)"
+                    [(ngModel)]="day.duration" type="number"
+                    min="0" max="24" step="0.5"
+                    (change)="autoSave(day)"
+                    class="w-16 text-center bg-transparent border-0 border-b border-slate-200 focus:border-primary focus:outline-none text-sm font-bold text-slate-800 py-0.5 px-0 transition-colors" />
+                  <span *ngIf="isReadOnly || isDateFuture(day.dateFormatted)"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm"
+                    [ngClass]="isDateFuture(day.dateFormatted) ? 'bg-slate-50 text-slate-300' : 'bg-slate-100 text-slate-800'">
+                    {{ day.duration || '0' }}
+                  </span>
+                </td>
+
+                <!-- Work Type -->
+                <td class="px-5 py-3 text-center whitespace-nowrap align-middle">
+                  <select *ngIf="!isReadOnly && !isDateFuture(day.dateFormatted)"
+                    [(ngModel)]="day.work_type"
+                    (change)="autoSave(day)"
+                    class="bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all cursor-pointer">
+                    <option *ngFor="let opt of absentOptions" [value]="opt">{{ capitalizeFirstLetter(opt) }}</option>
+                  </select>
+                  <span *ngIf="isReadOnly || isDateFuture(day.dateFormatted)"
+                    class="inline-flex px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border"
+                    [ngClass]="isDateFuture(day.dateFormatted) ? 'bg-slate-50 text-slate-300 border-slate-100' :
+                      day.work_type === 'working' ? 'bg-green-50 text-green-700 border-green-200' :
+                      day.work_type === 'full_day_leave' || day.work_type === 'half_day_leave' ? 'bg-red-50 text-red-700 border-red-200' :
+                      day.work_type === 'holiday' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      'bg-slate-50 text-slate-600 border-slate-200'">
+                    {{ capitalizeFirstLetter(day.work_type) || 'N/A' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+    <app-footer></app-footer>
+  </div>
+</app-page-container>
