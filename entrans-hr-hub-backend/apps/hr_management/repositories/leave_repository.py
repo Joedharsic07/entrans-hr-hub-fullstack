@@ -22,7 +22,7 @@ class LeaveRepository:
         balance, _ = LeaveBalance.objects.get_or_create(
             employee=user, 
             leave_type=leave_type, 
-            defaults={'total_days': 12.0}
+            defaults={'total_days': 0.0}
         )
         return balance
 

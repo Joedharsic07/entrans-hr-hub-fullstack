@@ -41,7 +41,23 @@ class LeaveRequestDetailView(generics.RetrieveUpdateAPIView):
         new_status = self.request.data.get('status')
         if new_status and self.request.user.is_staff and serializer.instance.status != 'approved':
             rejection_reason = self.request.data.get('rejection_reason', serializer.instance.rejection_reason)
-            serializer.save(status=new_status, approver=self.request.user, rejection_reason=rejection_reason)
+            instance = serializer.save(status=new_status, approver=self.request.user, rejection_reason=rejection_reason)
+            
+            from hr_management.models.notification import Notification
+            if new_status == 'approved':
+                Notification.objects.create(
+                    user=instance.employee,
+                    notification_type='leave_approved',
+                    title='Leave Approved',
+                    message=f'Your {instance.leave_type} leave from {instance.start_date} to {instance.end_date} has been approved.'
+                )
+            elif new_status == 'rejected':
+                Notification.objects.create(
+                    user=instance.employee,
+                    notification_type='leave_rejected',
+                    title='Leave Rejected',
+                    message=f'Your {instance.leave_type} leave has been rejected. Reason: {rejection_reason}'
+                )
         else:
             serializer.save()
 

@@ -1,7 +1,7 @@
 import { Component, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { LoginService } from './component/service/login.service';
+import { LoginService } from '@core/services/api/login.service';
 
 @Component({
   selector: 'app-root',
@@ -36,6 +36,7 @@ export class AppComponent {
     ).subscribe(() => {
       this.updateUserData(false);
       this.showSettingsDropdown = false;
+      this.showMobileSidebar = false;
     });
   }
 

@@ -1,0 +1,115 @@
+/* ===== Sidebar Elite ===== */
+a,
+button {
+  color: white;
+}
+
+/* Sidebar scrollbar */
+aside::-webkit-scrollbar {
+  width: 4px;
+}
+
+aside::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+aside::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 100px;
+}
+
+aside::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.sidebar-nav-link {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  height: 46px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  gap: 10px;
+  transition: all 150ms;
+  white-space: nowrap;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+
+.sidebar-nav-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.sidebar-active {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+  box-shadow: inset 3px 0 0 rgba(255, 255, 255, 0.9);
+}
+
+.sidebar-nav-icon {
+  font-size: 15px;
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 150ms;
+}
+
+.group:hover .sidebar-nav-icon {
+  transform: scale(1.08);
+}
+
+.sidebar-nav-text {
+  font-weight: 500;
+  font-size: 15px;
+}
+
+/* Sub-links */
+.sidebar-sub-link {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  transition: all 150ms;
+  cursor: pointer;
+}
+
+.sidebar-sub-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  padding-left: 16px;
+}
+
+/* Version badge */
+.sidebar-version-badge {
+  display: inline-block;
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: center;
+  width: 100%;
+}
+
+/* Bottom footer text */
+aside .mt-auto {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}

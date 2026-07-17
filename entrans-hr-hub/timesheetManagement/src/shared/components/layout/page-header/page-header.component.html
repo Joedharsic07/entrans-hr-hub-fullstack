@@ -1,0 +1,15 @@
+<div class="dashboard-header">
+  <div>
+    <div class="breadcrumb" *ngIf="breadcrumbs && breadcrumbs.length > 0">
+      <ng-container *ngFor="let item of breadcrumbs; let last = last">
+        <span class="breadcrumb-item" [class.active]="item.active || last">{{ item.label }}</span>
+        <i *ngIf="!last" class="bi bi-chevron-right breadcrumb-sep"></i>
+      </ng-container>
+    </div>
+    <h1 class="dashboard-title">{{ pageTitle }}</h1>
+    <p class="text-sm text-slate-500 mt-1.5 font-medium" *ngIf="pageSubtitle">{{ pageSubtitle }}</p>
+  </div>
+  <div class="flex items-center gap-3">
+    <ng-content select="[actions]"></ng-content>
+  </div>
+</div>

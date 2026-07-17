@@ -17,7 +17,7 @@ class AttendanceService:
         try:
             location = geolocator.reverse((lat, lng), exactly_one=True)
             return location.address
-        except GeocoderServiceError:
+        except Exception:
             return None
 
     @staticmethod
