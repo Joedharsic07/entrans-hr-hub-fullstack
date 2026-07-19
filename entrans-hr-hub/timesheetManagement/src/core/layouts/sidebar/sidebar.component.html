@@ -20,7 +20,7 @@
     <div class="flex flex-col w-full py-5 px-3 gap-1.5 flex-1">
 
       <!-- Dashboard -->
-      <div *ngIf="isAdmin" class="group">
+      <div class="group">
         <a routerLink="/admin" routerLinkActive="sidebar-active" [routerLinkActiveOptions]="{exact: true}"
           class="sidebar-nav-link" [ngClass]="{'justify-center': sidebarHidden}">
           <i class="bi bi-grid-1x2-fill sidebar-nav-icon"></i>
