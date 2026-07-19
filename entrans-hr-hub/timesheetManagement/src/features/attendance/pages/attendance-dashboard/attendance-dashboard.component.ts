@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '@environments/environment';
 import { HotToastService } from '@ngneat/hot-toast';
 
 @Component({
@@ -112,7 +113,7 @@ export class AttendanceDashboardComponent implements OnInit {
 
   fetchAttendance() {
     this.isLoadingCalendar = true;
-    this.http.get('http://127.0.0.1:8000/api/attendance/').subscribe({
+    this.http.get(`${environment.apiUrl}/attendance/`).subscribe({
       next: (data: any) => {
         this.attendanceLogs = data;
         const realToday = new Date();
@@ -136,7 +137,7 @@ export class AttendanceDashboardComponent implements OnInit {
   }
 
   fetchLeaves() {
-    this.http.get('http://127.0.0.1:8000/api/leaves/').subscribe({
+    this.http.get(`${environment.apiUrl}/leaves/`).subscribe({
       next: (data: any) => {
         this.leaves = data.filter((l: any) => l.status === 'approved');
         this.generateCalendar();
@@ -147,7 +148,7 @@ export class AttendanceDashboardComponent implements OnInit {
 
   fetchPaginatedAttendance(page: number) {
     this.isLoadingLogs = true;
-    this.http.get(`http://127.0.0.1:8000/api/attendance/?page=${page}&page_size=${this.pageSize}`).subscribe({
+    this.http.get(`${environment.apiUrl}/attendance/?page=${page}&page_size=${this.pageSize}`).subscribe({
       next: (data: any) => {
         this.paginatedLogs = data.results;
         this.currentPage = page;
@@ -184,7 +185,7 @@ export class AttendanceDashboardComponent implements OnInit {
   }
 
   fetchLeaveBalances() {
-    this.http.get('http://127.0.0.1:8000/api/leaves/balances/').subscribe({
+    this.http.get(`${environment.apiUrl}/leaves/balances/`).subscribe({
       next: (data: any) => {
         this.leaveBalances = data;
         this.sickLeaveBalance = this.leaveBalances.find(b => b.leave_type === 'SICK') || null;
@@ -349,7 +350,7 @@ export class AttendanceDashboardComponent implements OnInit {
   }
 
   private executePunchIn(payload: any) {
-    this.http.post('http://127.0.0.1:8000/api/attendance/clock-in/', payload).subscribe({
+    this.http.post(`${environment.apiUrl}/attendance/clock-in/`, payload).subscribe({
       next: () => {
         this.toastr.success('Punched in successfully');
         this.fetchAttendance();
@@ -394,7 +395,7 @@ export class AttendanceDashboardComponent implements OnInit {
   }
 
   private executePunchOut(payload: any) {
-    this.http.post('http://127.0.0.1:8000/api/attendance/clock-out/', payload).subscribe({
+    this.http.post(`${environment.apiUrl}/attendance/clock-out/`, payload).subscribe({
       next: () => {
         this.toastr.success('Punched out successfully');
         this.fetchAttendance();
@@ -408,7 +409,7 @@ export class AttendanceDashboardComponent implements OnInit {
   }
 
   breakStart() {
-    this.http.post('http://127.0.0.1:8000/api/attendance/break-start/', {}).subscribe({
+    this.http.post(`${environment.apiUrl}/attendance/break-start/`, {}).subscribe({
       next: () => {
         this.toastr.info('Break started');
         this.fetchAttendance();
@@ -418,7 +419,7 @@ export class AttendanceDashboardComponent implements OnInit {
   }
 
   breakEnd() {
-    this.http.post('http://127.0.0.1:8000/api/attendance/break-end/', {}).subscribe({
+    this.http.post(`${environment.apiUrl}/attendance/break-end/`, {}).subscribe({
       next: () => {
         this.toastr.info('Break ended');
         this.fetchAttendance();

@@ -1,5 +1,6 @@
 import { Component, HostListener, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '@environments/environment';
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { Router } from '@angular/router';
@@ -62,7 +63,7 @@ export class GlobalSearchComponent implements OnInit {
     }
     
     this.isLoading = true;
-    this.http.get(`http://127.0.0.1:8000/api/search/?q=${query}`).subscribe({
+    this.http.get(`${environment.apiUrl}/search/?q=${query}`).subscribe({
       next: (data: any) => {
         this.results = data.results;
         this.isLoading = false;

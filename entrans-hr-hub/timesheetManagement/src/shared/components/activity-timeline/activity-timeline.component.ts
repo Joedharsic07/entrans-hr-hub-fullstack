@@ -1,5 +1,6 @@
 import { Component, OnInit, Input } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '@environments/environment';
 
 @Component({
   selector: 'app-activity-timeline',
@@ -22,7 +23,7 @@ export class ActivityTimelineComponent implements OnInit {
     // In a real app, there would be a dedicated endpoint for activity logs.
     // Assuming backend endpoint /api/access-logs/ or /api/activities/ exists.
     // For now, I'll fetch access-logs as a proxy, or an 'activities' endpoint.
-    let url = 'http://127.0.0.1:8000/api/user-recent-activities/';
+    let url = `${environment.apiUrl}/user-recent-activities/`;
     if (this.userId) {
       url += `?user_id=${this.userId}`;
     }

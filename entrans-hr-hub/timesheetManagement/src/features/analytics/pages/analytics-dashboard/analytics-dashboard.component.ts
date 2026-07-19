@@ -1,6 +1,8 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { HotToastService } from '@ngneat/hot-toast';
+import { environment } from '@environments/environment';
+
 import {
   ChartComponent,
   ApexAxisChartSeries,
@@ -23,6 +25,7 @@ export type ChartOptions = {
   labels?: any;
   responsive?: ApexResponsive[];
   colors?: string[];
+  baseUrl?: string;
 };
 
 @Component({
@@ -75,7 +78,7 @@ export class AnalyticsDashboardComponent implements OnInit {
   }
 
   fetchAnalytics() {
-    this.http.get('http://127.0.0.1:8000/api/analytics/dashboard/').subscribe({
+    this.http.get(`${environment.apiUrl}/analytics/dashboard/`).subscribe({
       next: (data: any) => {
         this.stats.active_employees = data.active_employees;
         this.stats.missing_timesheets = data.missing_timesheets;
