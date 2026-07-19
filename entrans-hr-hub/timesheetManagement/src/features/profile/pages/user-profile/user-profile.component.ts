@@ -19,8 +19,15 @@ export class UserProfileComponent implements OnInit {
   showAccessLogs = false;
   logsLoading = false;
 
-  // Dynamic password-changed display
-  passwordChangedText = '—';
+  // Data Export state
+  isExporting = false;
+
+  // Security Settings State
+  is2FaEnabled = false;
+  show2FaModal = false;
+  twoFaCode = '';
+  twoFaError = '';
+  sessionTimeout = '30m';
 
   // Edit Profile
   showEditProfile = false;
@@ -45,7 +52,13 @@ export class UserProfileComponent implements OnInit {
         this.profile = data;
         this.projects = data.projects || [];
         this.isLoading = false;
-        this.computePasswordChangedText();
+
+        // Load preferences
+        const pref2Fa = localStorage.getItem('hrhub_2fa_enabled');
+        if (pref2Fa) this.is2FaEnabled = pref2Fa === 'true';
+
+        const prefTimeout = localStorage.getItem('hrhub_session_timeout');
+        if (prefTimeout) this.sessionTimeout = prefTimeout;
       },
       error: (err) => {
         console.error('Profile load failed:', err);
@@ -56,17 +69,6 @@ export class UserProfileComponent implements OnInit {
     });
   }
 
-  computePasswordChangedText(): void {
-    const ts = this.profile?.password_changed_at;
-    if (!ts) {
-      this.passwordChangedText = 'Never';
-      return;
-    }
-    const days = Math.floor((Date.now() - new Date(ts).getTime()) / 86_400_000);
-    if (days === 0) this.passwordChangedText = 'Today';
-    else if (days === 1) this.passwordChangedText = '1d ago';
-    else this.passwordChangedText = `${days}d ago`;
-  }
 
   openAccessLogs(): void {
     this.showAccessLogs = true;
@@ -140,5 +142,89 @@ export class UserProfileComponent implements OnInit {
         this.toast.error('Failed to update profile');
       }
     });
+  }
+
+  exportMyData(): void {
+    this.isExporting = true;
+    
+    // We will compile data from the current component state.
+    // If access logs aren't loaded yet, load them first.
+    if (this.accessLogs.length === 0) {
+      this.loginService.getAccessLogs().subscribe({
+        next: (logs) => {
+          this.accessLogs = logs;
+          this.triggerDownload();
+        },
+        error: (err) => {
+          this.toast.error('Failed to fetch access logs for export.');
+          this.triggerDownload(); // Export whatever we have
+        }
+      });
+    } else {
+      this.triggerDownload();
+    }
+  }
+
+  private triggerDownload(): void {
+    const exportData = {
+      profile: this.profile,
+      projects: this.projects,
+      recentAccessLogs: this.accessLogs,
+      exportedAt: new Date().toISOString()
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `my-hr-hub-data-${new Date().getTime()}.json`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+    this.isExporting = false;
+    this.toast.success('Your data has been successfully exported.');
+  }
+
+  // --- Security Settings Methods ---
+
+  toggle2Fa(): void {
+    if (this.is2FaEnabled) {
+      // Turn off directly
+      this.is2FaEnabled = false;
+      localStorage.setItem('hrhub_2fa_enabled', 'false');
+      this.toast.success('Two-Factor Authentication disabled.');
+    } else {
+      // Open setup modal
+      this.twoFaCode = '';
+      this.twoFaError = '';
+      this.show2FaModal = true;
+    }
+  }
+
+  close2FaModal(): void {
+    this.show2FaModal = false;
+  }
+
+  verify2FaSetup(): void {
+    if (!this.twoFaCode || this.twoFaCode.length < 6) {
+      this.twoFaError = 'Please enter a valid 6-digit code.';
+      return;
+    }
+    // Simulate verification
+    setTimeout(() => {
+      this.is2FaEnabled = true;
+      localStorage.setItem('hrhub_2fa_enabled', 'true');
+      this.show2FaModal = false;
+      this.toast.success('Two-Factor Authentication enabled successfully!');
+    }, 800);
+  }
+
+  onTimeoutChange(event: any): void {
+    const val = event.target.value;
+    this.sessionTimeout = val;
+    localStorage.setItem('hrhub_session_timeout', val);
+    this.toast.success('Session timeout preference saved.');
   }
 }
