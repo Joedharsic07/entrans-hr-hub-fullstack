@@ -91,7 +91,7 @@ export class LoginComponent implements OnInit {
           } else if (err.status === 403) {
             this.toast.error('Your account is inactive. Please contact your administrator.');
           } else if (err.status === 0) {
-            this.toast.error('Cannot reach the server. Make sure the backend is running on http://127.0.0.1:8000');
+            this.toast.error(`Cannot reach the server. Make sure the backend is running on ${environment.apiUrl}`);
           } else {
             const msg = err.error?.message || err.error?.detail || JSON.stringify(err.error);
             this.toast.error(`Google sign-in failed (${err.status}): ${msg}`);
