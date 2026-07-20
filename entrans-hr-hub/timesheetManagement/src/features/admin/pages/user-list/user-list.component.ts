@@ -14,7 +14,7 @@ import { LoginService } from '@core/services/api/login.service';
 export class UserListComponent implements OnInit, OnDestroy {
 
   users: any[] = [];
-  loading = false;
+  loading = true;
   search = '';
   page = 1;
   totalPages = 1;
@@ -63,7 +63,7 @@ export class UserListComponent implements OnInit, OnDestroy {
       last_name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
       designation: [''],
-      date_of_joining: [''],
+      date_of_joining: ['', Validators.required],
       role: ['user', Validators.required]
     });
     

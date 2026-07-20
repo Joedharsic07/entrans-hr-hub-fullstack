@@ -257,6 +257,14 @@ saveRow(day: any): void {
     work_type: day.work_type || 'working'
   };
 
+  const needsValidation = ['working', 'half_day_leave'].includes(payload.work_type);
+  const isValid = !needsValidation || (
+    payload.task_name && payload.task_name.trim() !== '' &&
+    payload.duration > 0
+  );
+
+  if (!isValid) return;
+
   this.savingRowIds.add(day.dateFormatted);
 
   const onSuccess = (res: any) => {

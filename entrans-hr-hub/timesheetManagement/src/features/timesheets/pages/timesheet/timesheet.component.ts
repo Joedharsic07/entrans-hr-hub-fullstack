@@ -294,12 +294,11 @@ if (!['working', 'half_day_leave'].includes(workType)) {
   // Check if we should validate (only for working/half_day_leave)
   const needsValidation = ['working', 'half_day_leave'].includes(workType);
   const isValid = !needsValidation || (
-    data.task_name &&
-    data.description &&
+    data.task_name && data.task_name.trim() !== '' &&
     data.duration > 0
   );
 
-  
+  if (!isValid) return;
 
   // Always check if we have an existing entry for this date
   const existingEntry = this.timeSheetData.find((entry: any) => 

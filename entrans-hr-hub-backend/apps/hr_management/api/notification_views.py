@@ -87,8 +87,8 @@ class NotificationStreamView(View):
                 
                 while True:
                     try:
-                        # Block until an event occurs or timeout for heartbeat (every 20s)
-                        _ = q.get(timeout=20)
+                        # Block until an event occurs or timeout for heartbeat (every 2s)
+                        _ = q.get(timeout=2)
                         
                         # When an update happens, fetch fresh data
                         current_notifications = NotificationService.get_notifications(user)

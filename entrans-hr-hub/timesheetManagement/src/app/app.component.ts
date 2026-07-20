@@ -1,5 +1,6 @@
 import { Component, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
+import { Title } from '@angular/platform-browser';
 import { filter } from 'rxjs/operators';
 import { LoginService } from '@core/services/api/login.service';
 
@@ -29,14 +30,23 @@ export class AppComponent {
   showNewPwd = false;
   showConfirmPwd = false;
 
-  constructor(private router: Router, private loginService: LoginService) {
+  constructor(private router: Router, private loginService: LoginService, private titleService: Title) {
     this.updateUserData(true); // Fetch from API initially
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
-    ).subscribe(() => {
+    ).subscribe((event: any) => {
       this.updateUserData(false);
       this.showSettingsDropdown = false;
       this.showMobileSidebar = false;
+      
+      // Update document title dynamically
+      let path = event.urlAfterRedirects.split('?')[0].split('/').filter((p: string) => p && isNaN(Number(p))).pop();
+      if (!path || path === 'login' || path === 'admin') {
+        this.titleService.setTitle('HR Hub Elite - Dashboard');
+      } else {
+        path = path.replace(/-/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
+        this.titleService.setTitle(`HR Hub Elite - ${path}`);
+      }
     });
   }
 

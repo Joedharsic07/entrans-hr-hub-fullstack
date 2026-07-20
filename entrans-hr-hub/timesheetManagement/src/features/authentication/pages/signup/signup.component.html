@@ -68,9 +68,14 @@
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
               <i class="bi bi-person text-lg"></i>
             </div>
-            <input type="text" id="name" formControlName="name"
+            <input type="text" id="name" formControlName="name" required
               class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-lg text-sm transition-all focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none placeholder:text-slate-400 shadow-sm"
               placeholder="John Doe" />
+          </div>
+          <div class="mt-1.5 space-y-1" *ngIf="signupForm.get('name')?.touched && signupForm.get('name')?.invalid">
+            <small class="text-red-500 font-semibold text-xs flex items-center gap-1" *ngIf="signupForm.get('name')?.errors?.['required']">
+              <i class="bi bi-exclamation-circle-fill"></i> Name is required.
+            </small>
           </div>
         </div>
 
@@ -81,8 +86,13 @@
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
               <i class="bi bi-calendar text-lg"></i>
             </div>
-            <input type="date" id="date_of_joining" formControlName="date_of_joining"
+            <input type="date" id="date_of_joining" formControlName="date_of_joining" required
               class="block w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-lg text-sm transition-all focus:border-blue-600 focus:ring-1 focus:ring-blue-600 outline-none placeholder:text-slate-400 shadow-sm" />
+          </div>
+          <div class="mt-1.5 space-y-1" *ngIf="signupForm.get('date_of_joining')?.touched && signupForm.get('date_of_joining')?.invalid">
+            <small class="text-red-500 font-semibold text-xs flex items-center gap-1" *ngIf="signupForm.get('date_of_joining')?.errors?.['required']">
+              <i class="bi bi-exclamation-circle-fill"></i> Date of joining is required.
+            </small>
           </div>
         </div>
 
@@ -167,7 +177,7 @@
         <!-- Submit Button -->
         <div class="pt-4">
           <button type="submit" (click)="submit()" [disabled]="!signupForm.valid || isLoading || !passwordsMatch"
-            class="w-full py-3.5 bg-[#0a58ca] hover:bg-blue-800 text-white text-base font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+            class="w-full py-3.5 bg-[#0a58ca] hover:bg-blue-800 text-white text-base font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
             <span *ngIf="!isLoading">Create Account</span>
             <i *ngIf="!isLoading" class="bi bi-arrow-right"></i>
             <span *ngIf="isLoading" class="flex items-center gap-2">

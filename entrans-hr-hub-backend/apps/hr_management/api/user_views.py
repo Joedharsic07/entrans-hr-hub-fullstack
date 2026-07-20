@@ -75,9 +75,9 @@ class CreateUserView(APIView):
         designation = request.data.get("designation", "").strip()
         date_of_joining = request.data.get("date_of_joining", "").strip()
 
-        if not email or not first_name or not last_name:
+        if not email or not first_name or not last_name or not date_of_joining:
             return Response(
-                {"error": "email, first_name, and last_name are required"},
+                {"error": "email, first_name, last_name, and date_of_joining are required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
