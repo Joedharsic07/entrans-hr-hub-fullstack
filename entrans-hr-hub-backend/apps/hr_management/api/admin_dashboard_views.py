@@ -12,7 +12,7 @@ class AdminDashboardStatsView(APIView):
         if not requesting_user or not (requesting_user.is_staff or requesting_user.is_superuser):
             return Response({"error": "Admin access required"}, status=status.HTTP_403_FORBIDDEN)
         
-        return Response(AdminDashboardService.get_stats())
+        return Response(AdminDashboardService.get_stats(requesting_user))
 
 class AdminRecentActivityView(APIView):
     permission_classes = [permissions.AllowAny]

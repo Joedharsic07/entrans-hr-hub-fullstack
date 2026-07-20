@@ -7,13 +7,13 @@ from hr_management.models import PPTGenerationLog
 
 class AdminDashboardService:
     @staticmethod
-    def get_stats():
+    def get_stats(user):
         total_timesheets = Timesheet.objects.annotate(
             year=ExtractYear('date'),
             month=ExtractMonth('date')
         ).values('user_project__user', 'year', 'month').distinct().count()
         
-        active_projects = Project.objects.count()
+        active_projects = Project.objects.filter(userproject__user=user).distinct().count()
         return {
             "timesheets_submitted": total_timesheets,
             "active_projects": active_projects

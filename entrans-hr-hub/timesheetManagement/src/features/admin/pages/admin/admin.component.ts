@@ -136,7 +136,7 @@ export class AdminComponent implements OnInit {
   }
 
   navigateToTimesheet(timesheetsLink: string): void {
-    this.router.navigate(['/' + timesheetsLink]);
+    this.router.navigateByUrl('/' + timesheetsLink);
   }
 
   navigateToTimesheetOptions() {

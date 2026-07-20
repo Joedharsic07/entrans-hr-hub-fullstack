@@ -26,8 +26,8 @@ ngOnInit() {
     if (this.forgotPasswordForm.invalid) return;
     this.loading = true;
     this.service.resetLink(this.forgotPasswordForm.value).subscribe({
-      next: () => {
-        this.message = 'Reset link has been sent to your email.';
+      next: (res: any) => {
+        this.message = res.message || 'Reset link has been sent to your email.';
         this.error = '';
         this.loading = false;
       },

@@ -194,15 +194,15 @@ class RequestPasswordResetView(APIView):
 
         try:
             result = AuthService.request_password_reset(email)
-            if result["status"] == "error":
-                if result.get("message") == "User not found":
-                    return Response(result, status=404)
-                return Response(result, status=500)
-            return Response(result)
+            # Always return a success message to prevent user enumeration
+            return Response({
+                "status": "success",
+                "message": "If that email exists, you will receive a reset link."
+            })
         except Exception as e:
             logger.error(f"[RESET_EMAIL_ERROR] {str(e)}")
             return Response(
-                {"status": "error", "message": f"Failed to send email: {str(e)}"},
+                {"status": "error", "message": "Something went wrong. Please try again later."},
                 status=500,
             )
 

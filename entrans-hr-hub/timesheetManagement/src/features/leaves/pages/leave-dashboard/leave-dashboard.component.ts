@@ -158,8 +158,8 @@ export class LeaveDashboardComponent implements OnInit {
         this.fetchHistory();
         if (!this.isAdmin) this.fetchBalances();
       },
-      error: () => {
-        this.toastr.error('Failed to apply leave');
+      error: (err: any) => {
+        this.toastr.error(err.error?.error || 'Failed to apply leave');
         this.isSubmittingLeave = false;
       }
     });

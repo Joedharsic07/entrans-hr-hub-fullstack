@@ -126,8 +126,12 @@ export class AttendanceDashboardComponent implements OnInit {
         this.generateCalendar();
         this.isLoadingCalendar = false;
       },
-      error: () => {
-        this.toastr.error('Failed to load attendance logs');
+      error: (err) => {
+        if (err.status === 404) {
+          this.attendanceLogs = [];
+        } else {
+          this.toastr.error('Failed to load attendance logs');
+        }
         this.isLoadingCalendar = false;
       }
     });
@@ -156,8 +160,14 @@ export class AttendanceDashboardComponent implements OnInit {
         this.totalPages = Math.ceil(data.count / this.pageSize);
         this.isLoadingLogs = false;
       },
-      error: () => {
-        this.toastr.error('Failed to load paginated logs');
+      error: (err) => {
+        if (err.status === 404) {
+          this.paginatedLogs = [];
+          this.totalCount = 0;
+          this.totalPages = 1;
+        } else {
+          this.toastr.error('Failed to load paginated logs');
+        }
         this.isLoadingLogs = false;
       }
     });
@@ -338,14 +348,14 @@ export class AttendanceDashboardComponent implements OnInit {
           this.executePunchIn(payload);
         },
         (error) => {
-          this.toastr.warning('Location access denied. Using fallback location for testing.');
-          this.executePunchIn({ latitude: 12.9716, longitude: 77.5946 });
+          this.toastr.error('Location access denied. Please allow location access to record attendance.');
+          this.isPunching = false;
         },
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     } else {
-      this.toastr.warning('Geolocation not supported. Using fallback location.');
-      this.executePunchIn({ latitude: 12.9716, longitude: 77.5946 });
+      this.toastr.error('Geolocation not supported. Cannot record attendance.');
+      this.isPunching = false;
     }
   }
 
@@ -383,14 +393,14 @@ export class AttendanceDashboardComponent implements OnInit {
           this.executePunchOut(payload);
         },
         (error) => {
-          this.toastr.warning('Location access denied. Using fallback location for testing.');
-          this.executePunchOut({ latitude: 12.9716, longitude: 77.5946 });
+          this.toastr.error('Location access denied. Please allow location access to record attendance.');
+          this.isPunching = false;
         },
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     } else {
-      this.toastr.warning('Geolocation not supported. Using fallback location.');
-      this.executePunchOut({ latitude: 12.9716, longitude: 77.5946 });
+      this.toastr.error('Geolocation not supported. Cannot record attendance.');
+      this.isPunching = false;
     }
   }
 

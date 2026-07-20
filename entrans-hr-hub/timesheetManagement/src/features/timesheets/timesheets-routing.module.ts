@@ -8,8 +8,8 @@ import { UserTimesheetsListComponent } from './pages/user-timesheets-list/user-t
 import { UserTimesheetsComponent } from './pages/user-timesheets/user-timesheets.component';
 
 const routes: Routes = [
-  { path: 'timesheet/:id', component: TimesheetComponent },
   { path: 'timesheet', component: TimesheetAutomationComponent, canActivate: [AuthGuard], data: { roles: ['user', 'Admin'] } },
+  { path: 'timesheet/:id', component: TimesheetComponent },
   { path: 'user-timesheets-list', component: UserTimesheetsListComponent },
   { path: 'user-timesheet/:userProjectId/:projectId', component: UserTimesheetsListComponent },
   { path: 'validation-timesheet', component: ValidationTimesheetComponent, canActivate: [AuthGuard], data: { roles: ['user', 'Admin'] } }

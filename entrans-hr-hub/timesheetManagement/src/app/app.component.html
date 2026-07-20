@@ -4,7 +4,7 @@
   <header *ngIf="shouldShowNavbar()" class="app-header">
     <!-- Left Section: Logo + Brand + Nav Tabs + Search -->
     <div class="header-left">
-      <button class="md:hidden header-mobile-btn" (click)="toggleMobileSidebar()">
+      <button class="md:hidden header-mobile-btn" (click)="toggleMobileSidebar()" aria-label="Toggle Mobile Menu">
         <i class="bi bi-list text-2xl leading-none"></i>
       </button>
 
@@ -18,9 +18,8 @@
       <nav class="header-nav">
         <a routerLink="/admin" routerLinkActive="header-nav-link--active" [routerLinkActiveOptions]="{exact: true}"
           class="header-nav-link">Dashboard</a>
-        <a routerLink="/validation-timesheet" routerLinkActive="header-nav-link--active"
-          class="header-nav-link">Reports</a>
-        <a class="header-nav-link">Settings</a>
+        <a *ngIf="userRole === 'Admin'" routerLink="/validation-timesheet" routerLinkActive="header-nav-link--active"
+          class="header-nav-link">Manual Validation</a>
       </nav>
 
       <!-- Search -->
@@ -47,7 +46,7 @@
 
       <!-- Settings -->
       <div class="relative" (click)="$event.stopPropagation()">
-        <button class="header-icon-btn" (click)="toggleSettings()">
+        <button class="header-icon-btn" (click)="toggleSettings()" aria-label="Settings">
           <i class="bi bi-gear"></i>
         </button>
         <div *ngIf="showSettingsDropdown"
